@@ -1,0 +1,14 @@
+/.gradle
+/.idea
+/.navigation
+/build
+/gradle
+/build.gradle
+/Fractals.iml
+/gradle.properties
+/gradlew
+/gradlew.bat
+/local.properties
+/settings.gradle
+.DS_Store
+/captures
