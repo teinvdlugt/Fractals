@@ -1,18 +1,14 @@
 package com.teinvdlugt.android.fractals;
 
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
 public class MainActivity extends AppCompatActivity {
 
     FractalView fractalView;
-    DrawerLayout drawerLayout;
-    LinearLayout drawer;
     EditText resolutionET, precisionET;
 
     @Override
@@ -31,8 +27,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void initViews() {
         fractalView = (FractalView) findViewById(R.id.fractalView);
-        drawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
-        drawer = (LinearLayout) findViewById(R.id.drawer);
         resolutionET = (EditText) findViewById(R.id.resolution);
         precisionET = (EditText) findViewById(R.id.precision);
     }
@@ -47,7 +41,6 @@ public class MainActivity extends AppCompatActivity {
             fractalView.setPrecision(precision);
         } catch (NumberFormatException ignored) {/*ignored*/}
 
-        drawerLayout.closeDrawer(drawer);
         fractalView.recalculate();
     }
 }
