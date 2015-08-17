@@ -2,34 +2,38 @@ package com.teinvdlugt.android.fractals;
 
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 
 public class FractalView extends View {
 
-    private double range = 3.5;
+    private double startReal = -2;
+    private double startImg = 2;
+    private double range = 4;
     private int resolution = 512;
-    private int precision = 1000;
+    private int precision = 400;
     private ProgressBar progressBar;
-    private boolean[][] pixels = new boolean[resolution][resolution];
-
-    Paint paint = new Paint();
+    private Bitmap bitmap;
+    private Paint paint = new Paint();
 
     public void recalculate() {
-        final int finalResolution = resolution;
-        final int finalPrecision = precision;
         new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int y = 0; y < pixels.length; y++) {
-                    for (int x = 0; x < pixels[y].length; x++) {
-                        double cReal = -range / 2 + range / finalResolution * x;
-                        double cImg = -range / 2 + range / finalResolution * y;
+                final int finalResolution = resolution;
+                final int finalPrecision = precision;
+                final int[] colors = new int[finalResolution * finalResolution];
+
+                for (int y = 0; y < resolution; y++) {
+                    for (int x = 0; x < resolution; x++) {
+                        double cReal = startReal + range / finalResolution * x;
+                        double cImg = startImg - range / finalResolution * y;
                         double zReal = cReal, zImg = cImg;
 
                         int i = 0;
@@ -39,24 +43,27 @@ public class FractalView extends View {
                             zReal = zRealNew;
                             i++;
                         }
-                        pixels[y][x] = i == finalPrecision;
+
+                        colors[resolution * y + x] = i == finalPrecision ? Color.BLACK : Color.WHITE;
                     }
-                    //Log.d("coffee", "row " + y + " " + pixels[y][40]);
 
                     final int finalY = y;
-                    progressBar.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            progressBar.setProgress(finalY);
-                        }
-                    });
+                    if (progressBar != null) {
+                        progressBar.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressBar.setProgress(finalY);
+                            }
+                        });
+                    }
                 }
 
-                postInvalidate();
-                progressBar.post(new Runnable() {
+                bitmap = Bitmap.createBitmap(colors, resolution, resolution, Bitmap.Config.RGB_565);
+                post(new Runnable() {
                     @Override
                     public void run() {
-                        progressBar.setProgress(0);
+                        invalidate();
+                        if (progressBar != null) progressBar.setProgress(0);
                     }
                 });
             }
@@ -67,23 +74,16 @@ public class FractalView extends View {
     protected void onDraw(Canvas canvas) {
         paint.setColor(Color.BLACK);
 
-        float pixelsPerBlockX = getWidth() / (float) resolution;
-        float pixelsPerBlockY = getHeight() / (float) resolution;
-        float pixelsPerBlock = pixelsPerBlockX < pixelsPerBlockY ? pixelsPerBlockX : pixelsPerBlockY;
-
-        for (int y = 0; y < pixels.length; y++) {
-            for (int x = 0; x < pixels[y].length; x++) {
-                if (pixels[y][x]) {
-                    canvas.drawRect(x * pixelsPerBlock, y * pixelsPerBlock,
-                            (x + 1) * pixelsPerBlock, (y + 1) * pixelsPerBlock, paint);
-                }
-            }
+        if (bitmap != null) {
+            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, canvas.getWidth(), canvas.getHeight(), false);
+            canvas.drawBitmap(scaled, 0f, 0f, null);
         }
 
-        // Draw y axis
-        canvas.drawLine(resolution / 2 * pixelsPerBlock, 0, resolution / 2 * pixelsPerBlock, getHeight(), paint);
-        // Draw x axis
-        canvas.drawLine(0, resolution / 2 * pixelsPerBlock, getWidth(), resolution / 2 * pixelsPerBlock, paint);
+        // Draw y axis TODO doesn't work
+        float xAxis = (float) (getWidth() * (-startReal / range));
+        float yAxis = (float) (getHeight() * (startImg / range));
+        canvas.drawLine(xAxis, 0, xAxis, getHeight(), paint);
+        canvas.drawLine(0, yAxis, getWidth(), yAxis, paint);
     }
 
 
@@ -91,9 +91,17 @@ public class FractalView extends View {
         return progressBar;
     }
 
-    public void setProgressBar(ProgressBar progressBar) {
+    /**
+     * The {@code ProgressBar} to which the {@code FractalView} will report its progress.
+     * If you want to detach the {@code ProgressBar} from the {@code FractalView}, pass null.
+     * @param progressBar Null if you don't want any {@code ProgressBar} to be linked to the
+     *                    {@code FractalView}.
+     */
+    public void setProgressBar(@Nullable ProgressBar progressBar) {
         this.progressBar = progressBar;
-        progressBar.setMax(resolution);
+        if (progressBar != null) {
+            progressBar.setMax(resolution);
+        }
     }
 
     public int getResolution() {
@@ -103,7 +111,6 @@ public class FractalView extends View {
     public void setResolution(int resolution) {
         this.resolution = resolution;
         progressBar.setMax(resolution);
-        pixels = new boolean[resolution][resolution];
     }
 
     public int getPrecision() {
