@@ -62,8 +62,9 @@ public class FractalView extends View {
                 post(new Runnable() {
                     @Override
                     public void run() {
-                        invalidate();
                         if (progressBar != null) progressBar.setProgress(0);
+                        invalidate();
+                        requestLayout();
                     }
                 });
             }
@@ -74,16 +75,20 @@ public class FractalView extends View {
     protected void onDraw(Canvas canvas) {
         paint.setColor(Color.BLACK);
 
+        int width = canvas.getWidth();
+        int height = canvas.getHeight();
+        int size = Math.min(width, height);
+
         if (bitmap != null) {
-            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, canvas.getWidth(), canvas.getHeight(), false);
+            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, size, size, false);
             canvas.drawBitmap(scaled, 0f, 0f, null);
         }
 
         // Draw y axis TODO doesn't work
-        float xAxis = (float) (getWidth() * (-startReal / range));
-        float yAxis = (float) (getHeight() * (startImg / range));
-        canvas.drawLine(xAxis, 0, xAxis, getHeight(), paint);
-        canvas.drawLine(0, yAxis, getWidth(), yAxis, paint);
+        float xAxis = (float) (size * (-startReal / range));
+        float yAxis = (float) (size * (startImg / range));
+        canvas.drawLine(xAxis, 0, xAxis, size, paint);
+        canvas.drawLine(0, yAxis, size, yAxis, paint);
     }
 
 
