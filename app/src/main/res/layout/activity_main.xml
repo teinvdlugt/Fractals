@@ -46,11 +46,28 @@
             android:layout_height="wrap_content"
             android:inputType="number" />
 
-        <Button
+        <LinearLayout
+            style="?attr/buttonBarStyle"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:onClick="onClickApply"
-            android:text="Apply" />
+            android:layout_height="wrap_content">
+
+            <Button
+                style="?attr/buttonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onClickApply"
+                android:text="@string/apply" />
+
+            <Button
+                style="?attr/buttonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onClickRestoreZoom"
+                android:text="@string/restore_zoom" />
+
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
 

@@ -1,5 +1,6 @@
 package com.teinvdlugt.android.fractals;
 
+import android.graphics.Path;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -32,6 +33,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickApply(View view) {
+        applyValues();
+        fractalView.recalculate();
+    }
+
+    public void applyValues() {
         try {
             int resolution = Integer.parseInt(resolutionET.getText().toString());
             fractalView.setResolution(resolution);
@@ -40,7 +46,15 @@ public class MainActivity extends AppCompatActivity {
             int precision = Integer.parseInt(precisionET.getText().toString());
             fractalView.setPrecision(precision);
         } catch (NumberFormatException ignored) {/*ignored*/}
+    }
 
-        fractalView.recalculate();
+    public void onClickRestoreZoom(View view) {
+        if (!fractalView.isCalculating()) {
+            applyValues();
+            fractalView.setStartReal(-2);
+            fractalView.setStartImg(2);
+            fractalView.setRange(4);
+            fractalView.recalculate();
+        }
     }
 }

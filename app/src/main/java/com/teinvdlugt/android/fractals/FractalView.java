@@ -77,6 +77,8 @@ public class FractalView extends View {
                         requestLayout();
                     }
                 });
+
+                calculating = false;
             }
         }).start();
     }
@@ -241,6 +243,38 @@ public class FractalView extends View {
 
     public void setPrecision(int precision) {
         if (!calculating) this.precision = precision;
+    }
+
+    public double getStartReal() {
+        return startReal;
+    }
+
+    public void setStartReal(double startReal) {
+        this.startReal = startReal;
+    }
+
+    public double getStartImg() {
+        return startImg;
+    }
+
+    public void setStartImg(double startImg) {
+        this.startImg = startImg;
+    }
+
+    public double getRange() {
+        return range;
+    }
+
+    public void setRange(double range) {
+        this.range = range;
+    }
+
+    public boolean isCalculating() {
+        return calculating;
+    }
+
+    public void setCalculating(boolean calculating) {
+        this.calculating = calculating;
     }
 
     public FractalView(Context context) {

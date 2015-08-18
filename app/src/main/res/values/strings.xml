@@ -3,4 +3,6 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="apply">Apply</string>
+    <string name="restore_zoom">Restore zoom</string>
 </resources>
