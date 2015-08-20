@@ -26,7 +26,12 @@ public class FractalView extends View {
     protected double range = 4;
     protected int resolution = 512;
     protected int precision = 400;
-    //protected int pixelsUpdate = 4;
+    /**
+     * The bitmap will be updated whilst calculating with for example a new resolution.
+     * {@code updateRows} is the number of rows to include in one update. The higher the
+     * value the higher the performance, but the used memory will increase a bit.
+     */
+    protected int updateRows = 6;
     protected ProgressBar progressBar;
     protected Bitmap bitmap;
     protected Bitmap scaledBitmap;
@@ -39,16 +44,14 @@ public class FractalView extends View {
             @Override
             public void run() {
                 calculating = true;
-                //final int[] colors = new int[resolution * resolution];
                 if (bitmap == null) {
                     bitmap = Bitmap.createBitmap(resolution, resolution, Bitmap.Config.RGB_565);
                 } else if (bitmap.getWidth() != resolution) {
                     bitmap = Bitmap.createScaledBitmap(bitmap, resolution, resolution, false);
                 }
 
-                //int[] colors = new int[resolution * pixelsUpdate];
+                int[] colors = new int[resolution * updateRows];
                 for (int y = 0; y < resolution; y++) {
-                    int[] rowColors = new int[resolution];
                     for (int x = 0; x < resolution; x++) {
                         double cReal = absoluteRealValue(x);
                         double cImg = absoluteImaginaryValue(y);
@@ -62,12 +65,8 @@ public class FractalView extends View {
                             iterations++;
                         }
 
-                        //colors[resolution * y + x] = iterations == precision ? Color.BLACK : Color.WHITE;
-                        //bitmap.setPixel(x, y, iterations == precision ? Color.BLACK : Color.WHITE);
-                        rowColors[x] = iterations == precision ? Color.BLACK : Color.WHITE;
+                        colors[(y % updateRows) * resolution + x] = iterations == precision ? Color.BLACK : Color.WHITE;
                     }
-
-                    bitmap.setPixels(rowColors, 0, resolution, 0, y, resolution, 1);
 
                     final int finalY = y;
                     if (progressBar != null) {
@@ -79,8 +78,8 @@ public class FractalView extends View {
                         });
                     }
 
-                    if (y % 4 == 0) {
-                        //bitmap.setPixels(rowColors, 0, resolution, 0, y, resolution, 1);
+                    if ((y + 1) % updateRows == 0) {
+                        bitmap.setPixels(colors, 0, resolution, 0, y - updateRows + 1, resolution, updateRows);
                         if (scaledBitmap != null) {
                             scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
                             postInvalidate();
@@ -88,7 +87,6 @@ public class FractalView extends View {
                     }
                 }
 
-                //bitmap = Bitmap.createBitmap(colors, resolution, resolution, Bitmap.Config.RGB_565);
                 if (scaledBitmap != null) {
                     scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getWidth(), false);
                 }
