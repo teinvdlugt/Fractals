@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.AsyncTask;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -32,82 +33,84 @@ public class FractalView extends View {
      * value the higher the performance, but the used memory will increase a bit.
      */
     protected int updateRows = 6;
-    protected ProgressBar progressBar;
     protected Bitmap bitmap;
     protected Bitmap scaledBitmap;
     protected Paint axisPaint;
     protected Paint zoomPaint;
     private boolean calculating = false;
 
-    public void recalculate() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                calculating = true;
-                if (bitmap == null) {
-                    bitmap = Bitmap.createBitmap(resolution, resolution, Bitmap.Config.RGB_565);
-                } else if (bitmap.getWidth() != resolution) {
-                    bitmap = Bitmap.createScaledBitmap(bitmap, resolution, resolution, false);
-                }
+    private class CalculatingTask extends AsyncTask<Void, Void, Void> {
+        int yProgress = 0;
 
-                int[] colors = new int[resolution * updateRows];
-                for (int y = 0; y < resolution; y++) {
-                    for (int x = 0; x < resolution; x++) {
-                        double cReal = absoluteRealValue(x);
-                        double cImg = absoluteImaginaryValue(y);
-                        double zReal = cReal, zImg = cImg;
-
-                        int iterations = 0;
-                        while (zReal * zReal + zImg * zImg <= 4 && iterations < precision) {
-                            double zRealNew = zReal * zReal - zImg * zImg + cReal;
-                            zImg = 2 * zReal * zImg + cImg;
-                            zReal = zRealNew;
-                            iterations++;
-                        }
-
-                        colors[(y % updateRows) * resolution + x] = iterations == precision ? Color.BLACK : Color.WHITE;
-                    }
-
-                    final int finalY = y;
-                    if (progressBar != null) {
-                        progressBar.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                progressBar.setProgress(finalY);
-                            }
-                        });
-                    }
-
-                    if ((y + 1) % updateRows == 0) {
-                        bitmap.setPixels(colors, 0, resolution, 0, y - updateRows + 1, resolution, updateRows);
-                        if (scaledBitmap != null) {
-                            scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
-                            postInvalidate();
-                        }
-                    } else if (y == resolution - 1) {
-                        bitmap.setPixels(colors, 0, resolution, 0, resolution - resolution % updateRows, resolution, resolution % updateRows);
-                        if (scaledBitmap != null) {
-                            scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
-                            postInvalidate();
-                        }
-                    }
-                }
-
-                if (scaledBitmap != null) {
-                    scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getWidth(), false);
-                }
-                post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (progressBar != null) progressBar.setProgress(0);
-                        invalidate();
-                        requestLayout();
-                    }
-                });
-
-                calculating = false;
+        @Override
+        protected Void doInBackground(Void... params) {
+            calculating = true;
+            long time = System.nanoTime();
+            if (bitmap == null) {
+                bitmap = Bitmap.createBitmap(resolution, resolution, Bitmap.Config.RGB_565);
+            } else if (bitmap.getWidth() != resolution) {
+                bitmap = Bitmap.createScaledBitmap(bitmap, resolution, resolution, false);
             }
-        }).start();
+
+            int[] colors = new int[resolution * updateRows];
+            for (int y = 0; y < resolution; y++) {
+                for (int x = 0; x < resolution; x++) {
+                    double cReal = absoluteRealValue(x);
+                    double cImg = absoluteImaginaryValue(y);
+                    double zReal = cReal, zImg = cImg;
+
+                    int iterations = 0;
+                    while (zReal * zReal + zImg * zImg <= 4 && iterations < precision) {
+                        double zRealNew = zReal * zReal - zImg * zImg + cReal;
+                        zImg = 2 * zReal * zImg + cImg;
+                        zReal = zRealNew;
+                        iterations++;
+                    }
+
+                    colors[(y % updateRows) * resolution + x] = iterations == precision ? Color.BLACK : Color.WHITE;
+                }
+
+                yProgress = y;
+
+                if ((y + 1) % updateRows == 0) {
+                    bitmap.setPixels(colors, 0, resolution, 0, y - updateRows + 1, resolution, updateRows);
+                    if (scaledBitmap != null) {
+                        scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
+                        publishProgress();
+                    }
+                } else if (y == resolution - 1) {
+                    bitmap.setPixels(colors, 0, resolution, 0, resolution - resolution % updateRows, resolution, resolution % updateRows);
+                    if (scaledBitmap != null) {
+                        scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
+                        publishProgress();
+                    }
+                }
+            }
+
+            if (scaledBitmap != null) {
+                scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getWidth(), false);
+            }
+
+            Log.d("processing time", "Time: " + (System.nanoTime() - time));
+
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            invalidate();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            calculating = false;
+            invalidate();
+            requestLayout();
+        }
+    }
+
+    public void recalculate() {
+        new CalculatingTask().execute();
     }
 
     @Override
@@ -288,24 +291,6 @@ public class FractalView extends View {
         return -1;
     }
 
-    public ProgressBar getProgressBar() {
-        return progressBar;
-    }
-
-    /**
-     * The {@code ProgressBar} to which the {@code FractalView} will report its progress.
-     * If you want to detach the {@code ProgressBar} from the {@code FractalView}, pass null.
-     *
-     * @param progressBar Null if you don't want any {@code ProgressBar} to be linked to the
-     *                    {@code FractalView}.
-     */
-    public void setProgressBar(@Nullable ProgressBar progressBar) {
-        this.progressBar = progressBar;
-        if (progressBar != null) {
-            progressBar.setMax(resolution);
-        }
-    }
-
     public int getResolution() {
         return resolution;
     }
@@ -313,7 +298,6 @@ public class FractalView extends View {
     public void setResolution(int resolution) {
         if (!calculating) {
             this.resolution = resolution;
-            progressBar.setMax(resolution);
         }
     }
 

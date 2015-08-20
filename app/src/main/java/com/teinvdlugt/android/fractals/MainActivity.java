@@ -21,7 +21,6 @@ public class MainActivity extends AppCompatActivity {
         resolutionET.setText(fractalView.getResolution() + "");
         precisionET.setText(fractalView.getPrecision() + "");
 
-        fractalView.setProgressBar((ProgressBar) findViewById(R.id.progressBar));
         fractalView.recalculate();
     }
 
