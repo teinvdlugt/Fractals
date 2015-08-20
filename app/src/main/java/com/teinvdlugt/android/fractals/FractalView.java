@@ -84,6 +84,12 @@ public class FractalView extends View {
                             scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
                             postInvalidate();
                         }
+                    } else if (y == resolution - 1) {
+                        bitmap.setPixels(colors, 0, resolution, 0, resolution - resolution % updateRows, resolution, resolution % updateRows);
+                        if (scaledBitmap != null) {
+                            scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
+                            postInvalidate();
+                        }
                     }
                 }
 
