@@ -163,12 +163,21 @@ public class FractalView extends View {
             requestLayout();
             return true;
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            if (checkTap(event)) {
+                return false;
+            }
             zoomIn();
             zoomStartX = zoomStartY = zoomEndX = zoomEndY = -1;
             recalculate();
             return true;
         }
         return super.onTouchEvent(event);
+    }
+
+    private boolean checkTap(MotionEvent e) {
+        boolean xNotChanged = Math.abs(e.getX() - zoomStartX) <= 2;
+        boolean yNotChanged = Math.abs(e.getY() - zoomStartY) <= 2;
+        return xNotChanged && yNotChanged;
     }
 
     private void zoomIn() {
