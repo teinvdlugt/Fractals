@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -25,6 +26,7 @@ public class FractalView extends View {
     protected double range = 4;
     protected int resolution = 512;
     protected int precision = 400;
+    //protected int pixelsUpdate = 4;
     protected ProgressBar progressBar;
     protected Bitmap bitmap;
     protected Bitmap scaledBitmap;
@@ -37,24 +39,35 @@ public class FractalView extends View {
             @Override
             public void run() {
                 calculating = true;
-                final int[] colors = new int[resolution * resolution];
+                //final int[] colors = new int[resolution * resolution];
+                if (bitmap == null) {
+                    bitmap = Bitmap.createBitmap(resolution, resolution, Bitmap.Config.RGB_565);
+                } else if (bitmap.getWidth() != resolution) {
+                    bitmap = Bitmap.createScaledBitmap(bitmap, resolution, resolution, false);
+                }
 
+                //int[] colors = new int[resolution * pixelsUpdate];
                 for (int y = 0; y < resolution; y++) {
+                    int[] rowColors = new int[resolution];
                     for (int x = 0; x < resolution; x++) {
                         double cReal = absoluteRealValue(x);
                         double cImg = absoluteImaginaryValue(y);
                         double zReal = cReal, zImg = cImg;
 
-                        int i = 0;
-                        while (zReal * zReal + zImg * zImg <= 4 && i < precision) {
+                        int iterations = 0;
+                        while (zReal * zReal + zImg * zImg <= 4 && iterations < precision) {
                             double zRealNew = zReal * zReal - zImg * zImg + cReal;
                             zImg = 2 * zReal * zImg + cImg;
                             zReal = zRealNew;
-                            i++;
+                            iterations++;
                         }
 
-                        colors[resolution * y + x] = i == precision ? Color.BLACK : Color.WHITE;
+                        //colors[resolution * y + x] = iterations == precision ? Color.BLACK : Color.WHITE;
+                        //bitmap.setPixel(x, y, iterations == precision ? Color.BLACK : Color.WHITE);
+                        rowColors[x] = iterations == precision ? Color.BLACK : Color.WHITE;
                     }
+
+                    bitmap.setPixels(rowColors, 0, resolution, 0, y, resolution, 1);
 
                     final int finalY = y;
                     if (progressBar != null) {
@@ -65,10 +78,20 @@ public class FractalView extends View {
                             }
                         });
                     }
+
+                    if (y % 4 == 0) {
+                        //bitmap.setPixels(rowColors, 0, resolution, 0, y, resolution, 1);
+                        if (scaledBitmap != null) {
+                            scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
+                            postInvalidate();
+                        }
+                    }
                 }
 
-                bitmap = Bitmap.createBitmap(colors, resolution, resolution, Bitmap.Config.RGB_565);
-                scaledBitmap = null;
+                //bitmap = Bitmap.createBitmap(colors, resolution, resolution, Bitmap.Config.RGB_565);
+                if (scaledBitmap != null) {
+                    scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getWidth(), false);
+                }
                 post(new Runnable() {
                     @Override
                     public void run() {
@@ -91,10 +114,14 @@ public class FractalView extends View {
         int size = Math.min(width, height);
 
         // Draw bitmap
-        if (bitmap != null) {
-            if (scaledBitmap == null) {
-                scaledBitmap = Bitmap.createScaledBitmap(bitmap, size, size, false);
+        if (scaledBitmap != null) {
+            if (scaledBitmap.getWidth() != size) {
+                scaledBitmap = Bitmap.createScaledBitmap(scaledBitmap, size, size, false);
             }
+        } else if (bitmap != null) {
+            scaledBitmap = Bitmap.createScaledBitmap(bitmap, size, size, false);
+        }
+        if (scaledBitmap != null) {
             canvas.drawBitmap(scaledBitmap, 0f, 0f, null);
         }
 
@@ -152,6 +179,46 @@ public class FractalView extends View {
         this.range = Math.max(xRange, yRange);
         this.startReal = Math.min(startReal, endReal);
         this.startImg = Math.max(startImg, endImg);
+    }
+
+    protected int resolveColor(int iterations) {
+        // white --> green --> red --> blue
+        double value = Math.pow(2, iterations / precision);
+        //double value = Math.pow(-Math.log(iterations/precision), -1);
+        //value = 1.0 / (value * value);
+        // low value => blue
+        // high value => white
+        // 1.0 (highest) value => black
+        if (value >= 1.0) return Color.BLACK;
+
+        // 0.00 blue
+        // 0.33 red
+        // 0.67 green
+        // 0.99 white
+
+        // 0.00 => 255 blue
+        // 0.33 => 0   blue
+        int blue = (int) Math.max((1.0 - value / 0.33) * 255, 0);
+
+        // 0.00 => 0   red
+        // 0.33 => 255 red
+        // 0.67 => 0   red
+        int red = (int) Math.max((1.0 - Math.abs(value - 0.33) / 0.33) * 255, 0);
+        int green = (int) Math.max((1.0 - Math.abs(value - 0.67) / 0.33) * 255, 0);
+
+        // 0.67 => 0.0 white factor
+        // 1.00 => 1.0 white factor
+        double whiteFactor = Math.max((1.0 - Math.abs(value - 1.0) / 0.33), 0);
+
+        // Whitify:
+        // Only green has to be whitified because red and white can never mix.
+        green += (255 - blue) * whiteFactor;
+        red += (255 - red) * whiteFactor;
+        blue += (255 - blue) * whiteFactor;
+
+        Log.d("colors", "value: " + value);
+
+        return Color.rgb(red, green, blue);
     }
 
     protected void init() {
