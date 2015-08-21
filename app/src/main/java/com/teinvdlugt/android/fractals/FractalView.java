@@ -7,12 +7,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.AsyncTask;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.ProgressBar;
 
 public class FractalView extends View {
 
@@ -37,23 +35,38 @@ public class FractalView extends View {
     protected Bitmap scaledBitmap;
     protected Paint axisPaint;
     protected Paint zoomPaint;
-    private boolean calculating = false;
+    private CalculatingTask calculatingTask;
 
     private class CalculatingTask extends AsyncTask<Void, Void, Void> {
-        int yProgress = 0;
+        double startReal, startImg, range;
+        int resolution, precision, updateRows;
+        Bitmap backup;
+
+        @Override
+        protected void onPreExecute() {
+            // Copy these values so that changes to the FractalView values will
+            // not affect calculating process.
+            this.startReal = FractalView.this.startReal;
+            this.startImg = FractalView.this.startImg;
+            this.range = FractalView.this.range;
+            this.resolution = FractalView.this.resolution;
+            this.precision = FractalView.this.precision;
+            this.updateRows = FractalView.this.updateRows;
+        }
 
         @Override
         protected Void doInBackground(Void... params) {
-            calculating = true;
             long time = System.nanoTime();
             if (bitmap == null) {
                 bitmap = Bitmap.createBitmap(resolution, resolution, Bitmap.Config.RGB_565);
             } else if (bitmap.getWidth() != resolution) {
+                backup = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
                 bitmap = Bitmap.createScaledBitmap(bitmap, resolution, resolution, false);
             }
 
             int[] colors = new int[resolution * updateRows];
             for (int y = 0; y < resolution; y++) {
+                if (isCancelled()) return null;
                 for (int x = 0; x < resolution; x++) {
                     double cReal = absoluteRealValue(x);
                     double cImg = absoluteImaginaryValue(y);
@@ -70,7 +83,7 @@ public class FractalView extends View {
                     colors[(y % updateRows) * resolution + x] = iterations == precision ? Color.BLACK : Color.WHITE;
                 }
 
-                yProgress = y;
+                if (isCancelled()) return null;
 
                 if ((y + 1) % updateRows == 0) {
                     bitmap.setPixels(colors, 0, resolution, 0, y - updateRows + 1, resolution, updateRows);
@@ -103,14 +116,49 @@ public class FractalView extends View {
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            calculating = false;
             invalidate();
             requestLayout();
+        }
+
+        @Override
+        protected void onCancelled() {
+            if (backup != null) bitmap = Bitmap.createBitmap(backup, 0, 0, backup.getWidth(), backup.getHeight());
+            if (scaledBitmap != null && backup != null)
+                scaledBitmap = Bitmap.createScaledBitmap(backup, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
+            invalidate();
+            requestLayout();
+        }
+
+        /**
+         * The real value in the complex field represented by a column of virtual pixels.
+         *
+         * @param column The column of the 'virtual' pixels (defined in {@code resolution})
+         * @return The real value in the complex field
+         */
+        protected double absoluteRealValue(int column) {
+            // TODO: 18-8-2015 resolution needs to be finalized when calculating process is running
+            return startReal + range / resolution * column;
+        }
+
+        /**
+         * The imaginary value in the complex field represented by a row of virtual pixels.
+         *
+         * @param row The row of the 'virtual' pixels (defined in {@code resolution})
+         * @return The imaginary value in the complex field
+         */
+        protected double absoluteImaginaryValue(int row) {
+            return startImg - range / resolution * row;
         }
     }
 
     public void recalculate() {
-        new CalculatingTask().execute();
+        if (calculatingTask != null) calculatingTask.cancel(true);
+        calculatingTask = new CalculatingTask();
+        calculatingTask.execute();
+    }
+
+    public void cancel() {
+        calculatingTask.cancel(true);
     }
 
     @Override
@@ -245,27 +293,6 @@ public class FractalView extends View {
     }
 
     /**
-     * The real value in the complex field represented by a column of virtual pixels.
-     *
-     * @param column The column of the 'virtual' pixels (defined in {@code resolution})
-     * @return The real value in the complex field
-     */
-    protected double absoluteRealValue(int column) {
-        // TODO: 18-8-2015 resolution needs to be finalized when calculating process is running
-        return startReal + range / resolution * column;
-    }
-
-    /**
-     * The imaginary value in the complex field represented by a row of virtual pixels.
-     *
-     * @param row The row of the 'virtual' pixels (defined in {@code resolution})
-     * @return The imaginary value in the complex field
-     */
-    protected double absoluteImaginaryValue(int row) {
-        return startImg - range / resolution * row;
-    }
-
-    /**
      * The real value in the complex field represented by a device pixel in {@code scaledBitmap}.
      *
      * @param x The x position of the device pixel from which to retrieve the real value
@@ -296,9 +323,7 @@ public class FractalView extends View {
     }
 
     public void setResolution(int resolution) {
-        if (!calculating) {
-            this.resolution = resolution;
-        }
+        this.resolution = resolution;
     }
 
     public int getPrecision() {
@@ -306,7 +331,7 @@ public class FractalView extends View {
     }
 
     public void setPrecision(int precision) {
-        if (!calculating) this.precision = precision;
+        this.precision = precision;
     }
 
     public double getStartReal() {
@@ -331,14 +356,6 @@ public class FractalView extends View {
 
     public void setRange(double range) {
         this.range = range;
-    }
-
-    public boolean isCalculating() {
-        return calculating;
-    }
-
-    public void setCalculating(boolean calculating) {
-        this.calculating = calculating;
     }
 
     public FractalView(Context context) {

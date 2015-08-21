@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -47,12 +46,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickRestoreZoom(View view) {
-        if (!fractalView.isCalculating()) {
-            applyValues();
-            fractalView.setStartReal(-2);
-            fractalView.setStartImg(2);
-            fractalView.setRange(4);
-            fractalView.recalculate();
-        }
+        applyValues();
+        fractalView.setStartReal(-2);
+        fractalView.setStartImg(2);
+        fractalView.setRange(4);
+        fractalView.recalculate();
+    }
+
+    public void onClickCancel(View view) {
+        fractalView.cancel();
     }
 }
