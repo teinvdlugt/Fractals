@@ -12,6 +12,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.Arrays;
+
 public class FractalView extends View {
 
     /**
@@ -30,7 +32,7 @@ public class FractalView extends View {
      * {@code updateRows} is the number of rows to include in one update. The higher the
      * value the higher the performance, but the used memory will increase a bit.
      */
-    protected int updateRows = 20;
+    protected int updateRows = 10;
     protected Bitmap bitmap;
     protected Bitmap scaledBitmap;
     protected Paint axisPaint;
@@ -65,6 +67,8 @@ public class FractalView extends View {
             } else {
                 bitmap = Bitmap.createBitmap(resolution, resolution, Bitmap.Config.RGB_565);
             }
+            int[] progressLine = new int[resolution];
+            Arrays.fill(progressLine, Color.RED);
 
             int[] colors = new int[resolution * updateRows];
             for (int y = 0; y < resolution; y++) {
@@ -89,6 +93,10 @@ public class FractalView extends View {
 
                 if ((y + 1) % updateRows == 0) {
                     bitmap.setPixels(colors, 0, resolution, 0, y - updateRows + 1, resolution, updateRows);
+                    if (y + 1 != bitmap.getHeight()) {
+                        bitmap.setPixels(progressLine, 0, resolution, 0, y + 1, resolution, 1);
+                    }
+
                     if (scaledBitmap != null) {
                         scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
                         publishProgress();
