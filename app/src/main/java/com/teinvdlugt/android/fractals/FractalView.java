@@ -30,7 +30,7 @@ public class FractalView extends View {
      * {@code updateRows} is the number of rows to include in one update. The higher the
      * value the higher the performance, but the used memory will increase a bit.
      */
-    protected int updateRows = 6;
+    protected int updateRows = 20;
     protected Bitmap bitmap;
     protected Bitmap scaledBitmap;
     protected Paint axisPaint;
@@ -38,30 +38,32 @@ public class FractalView extends View {
     private CalculatingTask calculatingTask;
 
     private class CalculatingTask extends AsyncTask<Void, Void, Void> {
-        double startReal, startImg, range;
-        int resolution, precision, updateRows;
+        double startReal = -1, startImg = -1, range = -1;
+        int resolution = -1, precision = -1, updateRows = -1;
         Bitmap backup;
 
         @Override
         protected void onPreExecute() {
             // Copy these values so that changes to the FractalView values will
             // not affect calculating process.
-            this.startReal = FractalView.this.startReal;
-            this.startImg = FractalView.this.startImg;
-            this.range = FractalView.this.range;
-            this.resolution = FractalView.this.resolution;
-            this.precision = FractalView.this.precision;
-            this.updateRows = FractalView.this.updateRows;
+            if (startReal == -1) startReal = FractalView.this.startReal;
+            if (startImg == -1) startImg = FractalView.this.startImg;
+            if (range == -1) range = FractalView.this.range;
+            if (resolution == -1) resolution = FractalView.this.resolution;
+            if (precision == -1) precision = FractalView.this.precision;
+            if (updateRows == -1) updateRows = FractalView.this.updateRows;
         }
 
         @Override
         protected Void doInBackground(Void... params) {
             long time = System.nanoTime();
-            if (bitmap == null) {
-                bitmap = Bitmap.createBitmap(resolution, resolution, Bitmap.Config.RGB_565);
-            } else if (bitmap.getWidth() != resolution) {
+            if (bitmap != null) {
                 backup = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
-                bitmap = Bitmap.createScaledBitmap(bitmap, resolution, resolution, false);
+                if (bitmap.getWidth() != resolution) {
+                    bitmap = Bitmap.createScaledBitmap(bitmap, resolution, resolution, false);
+                }
+            } else {
+                bitmap = Bitmap.createBitmap(resolution, resolution, Bitmap.Config.RGB_565);
             }
 
             int[] colors = new int[resolution * updateRows];
@@ -116,17 +118,29 @@ public class FractalView extends View {
 
         @Override
         protected void onPostExecute(Void aVoid) {
+            FractalView.this.startReal = startReal;
+            FractalView.this.startImg = startImg;
+            FractalView.this.range = range;
+            FractalView.this.resolution = resolution;
+            FractalView.this.precision = precision;
+            FractalView.this.updateRows = updateRows;
+
             invalidate();
             requestLayout();
+
+            resetCalculatingTask();
         }
 
         @Override
         protected void onCancelled() {
-            if (backup != null) bitmap = Bitmap.createBitmap(backup, 0, 0, backup.getWidth(), backup.getHeight());
+            if (backup != null)
+                bitmap = Bitmap.createBitmap(backup, 0, 0, backup.getWidth(), backup.getHeight());
             if (scaledBitmap != null && backup != null)
                 scaledBitmap = Bitmap.createScaledBitmap(backup, scaledBitmap.getWidth(), scaledBitmap.getHeight(), false);
             invalidate();
             requestLayout();
+
+            resetCalculatingTask();
         }
 
         /**
@@ -152,13 +166,15 @@ public class FractalView extends View {
     }
 
     public void recalculate() {
-        if (calculatingTask != null) calculatingTask.cancel(true);
-        calculatingTask = new CalculatingTask();
+        if (calculatingTask == null || calculatingTask.isCancelled()) {
+            calculatingTask = new CalculatingTask();
+        }
         calculatingTask.execute();
     }
 
     public void cancel() {
         calculatingTask.cancel(true);
+        calculatingTask = new CalculatingTask();
     }
 
     @Override
@@ -240,9 +256,13 @@ public class FractalView extends View {
         double xRange = Math.abs(startReal - endReal);
         double yRange = Math.abs(startImg - endImg);
 
-        this.range = Math.max(xRange, yRange);
-        this.startReal = Math.min(startReal, endReal);
-        this.startImg = Math.max(startImg, endImg);
+        calculatingTask.range = Math.max(xRange, yRange);
+        calculatingTask.startReal = Math.min(startReal, endReal);
+        calculatingTask.startImg = Math.max(startImg, endImg);
+    }
+
+    private void resetCalculatingTask() {
+        calculatingTask = new CalculatingTask();
     }
 
     protected int resolveColor(int iterations) {
@@ -290,6 +310,8 @@ public class FractalView extends View {
         zoomPaint = new Paint();
         axisPaint.setColor(Color.BLACK);
         zoomPaint.setARGB(128, 50, 50, 200);
+
+        calculatingTask = new CalculatingTask();
     }
 
     /**
@@ -323,7 +345,7 @@ public class FractalView extends View {
     }
 
     public void setResolution(int resolution) {
-        this.resolution = resolution;
+        calculatingTask.resolution = resolution;
     }
 
     public int getPrecision() {
@@ -331,7 +353,7 @@ public class FractalView extends View {
     }
 
     public void setPrecision(int precision) {
-        this.precision = precision;
+        calculatingTask.precision = precision;
     }
 
     public double getStartReal() {
@@ -339,7 +361,7 @@ public class FractalView extends View {
     }
 
     public void setStartReal(double startReal) {
-        this.startReal = startReal;
+        calculatingTask.startReal = startReal;
     }
 
     public double getStartImg() {
@@ -347,7 +369,7 @@ public class FractalView extends View {
     }
 
     public void setStartImg(double startImg) {
-        this.startImg = startImg;
+        calculatingTask.startImg = startImg;
     }
 
     public double getRange() {
@@ -355,7 +377,7 @@ public class FractalView extends View {
     }
 
     public void setRange(double range) {
-        this.range = range;
+        calculatingTask.range = range;
     }
 
     public FractalView(Context context) {
