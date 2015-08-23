@@ -39,6 +39,17 @@
             android:layout_height="wrap_content"
             android:inputType="number" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Escape value:" />
+
+        <EditText
+            android:id="@+id/escapeValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="numberDecimal" />
+
         <LinearLayout
             style="?attr/buttonBarStyle"
             android:layout_width="match_parent"

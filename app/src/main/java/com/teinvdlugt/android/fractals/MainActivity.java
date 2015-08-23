@@ -8,7 +8,7 @@ import android.widget.EditText;
 public class MainActivity extends AppCompatActivity {
 
     FractalView fractalView;
-    EditText resolutionET, precisionET;
+    EditText resolutionET, precisionET, escapeValueET;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
 
         resolutionET.setText(fractalView.getResolution() + "");
         precisionET.setText(fractalView.getPrecision() + "");
+        escapeValueET.setText(fractalView.getEscapeValue() + "");
 
         fractalView.recalculate();
     }
@@ -27,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
         fractalView = (FractalView) findViewById(R.id.fractalView);
         resolutionET = (EditText) findViewById(R.id.resolution);
         precisionET = (EditText) findViewById(R.id.precision);
+        escapeValueET = (EditText) findViewById(R.id.escapeValue);
     }
 
     public void onClickApply(View view) {
@@ -42,6 +44,10 @@ public class MainActivity extends AppCompatActivity {
         try {
             int precision = Integer.parseInt(precisionET.getText().toString());
             fractalView.setPrecision(precision);
+        } catch (NumberFormatException ignored) {/*ignored*/}
+        try {
+            double escapeValue = Double.parseDouble(escapeValueET.getText().toString());
+            fractalView.setEscapeValue(escapeValue);
         } catch (NumberFormatException ignored) {/*ignored*/}
     }
 

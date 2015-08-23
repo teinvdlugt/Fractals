@@ -33,6 +33,7 @@ public class FractalView extends View {
      * value the higher the performance, but the used memory will increase a bit.
      */
     protected int updateRows = 10;
+    protected double escapeValue = 2;
     protected Bitmap bitmap;
     protected Bitmap scaledBitmap;
     protected Paint axisPaint;
@@ -40,7 +41,7 @@ public class FractalView extends View {
     private CalculatingTask calculatingTask;
 
     private class CalculatingTask extends AsyncTask<Void, Void, Void> {
-        double startReal = -1, startImg = -1, range = -1;
+        double startReal = -1, startImg = -1, range = -1, escapeValue = -1;
         int resolution = -1, precision = -1, updateRows = -1;
         Bitmap backup;
 
@@ -51,6 +52,7 @@ public class FractalView extends View {
             if (startReal == -1) startReal = FractalView.this.startReal;
             if (startImg == -1) startImg = FractalView.this.startImg;
             if (range == -1) range = FractalView.this.range;
+            if (escapeValue == -1) escapeValue = FractalView.this.escapeValue;
             if (resolution == -1) resolution = FractalView.this.resolution;
             if (precision == -1) precision = FractalView.this.precision;
             if (updateRows == -1) updateRows = FractalView.this.updateRows;
@@ -79,7 +81,7 @@ public class FractalView extends View {
                     double zReal = cReal, zImg = cImg;
 
                     int iterations = 0;
-                    while (zReal * zReal + zImg * zImg <= 4 && iterations < precision) {
+                    while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
                         double zRealNew = zReal * zReal - zImg * zImg + cReal;
                         zImg = 2 * zReal * zImg + cImg;
                         zReal = zRealNew;
@@ -129,6 +131,7 @@ public class FractalView extends View {
             FractalView.this.startReal = startReal;
             FractalView.this.startImg = startImg;
             FractalView.this.range = range;
+            FractalView.this.escapeValue = escapeValue;
             FractalView.this.resolution = resolution;
             FractalView.this.precision = precision;
             FractalView.this.updateRows = updateRows;
@@ -386,6 +389,14 @@ public class FractalView extends View {
 
     public void setRange(double range) {
         calculatingTask.range = range;
+    }
+
+    public double getEscapeValue() {
+        return escapeValue;
+    }
+
+    public void setEscapeValue(double escapeValue) {
+        calculatingTask.escapeValue = escapeValue;
     }
 
     public FractalView(Context context) {
