@@ -76,15 +76,12 @@ public class FractalView extends View {
             for (int y = 0; y < resolution; y++) {
                 if (isCancelled()) return null;
                 for (int x = 0; x < resolution; x++) {
-                    double cReal = absoluteRealValue(x);
-                    double cImg = absoluteImaginaryValue(y);
-                    double zReal = cReal, zImg = cImg;
+                    Complex z = new Complex(absoluteRealValue(x), absoluteImaginaryValue(y));
+                    final Complex c = z.copy();
 
                     int iterations = 0;
-                    while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
-                        double zRealNew = zReal * zReal - zImg * zImg + cReal;
-                        zImg = 2 * zReal * zImg + cImg;
-                        zReal = zRealNew;
+                    while (z.radiusSquared() <= escapeValue * escapeValue && iterations < precision) {
+                        z = z.multiply(z).add(c);
                         iterations++;
                     }
 
@@ -161,7 +158,6 @@ public class FractalView extends View {
          * @return The real value in the complex field
          */
         protected double absoluteRealValue(int column) {
-            // TODO: 18-8-2015 resolution needs to be finalized when calculating process is running
             return startReal + range / resolution * column;
         }
 

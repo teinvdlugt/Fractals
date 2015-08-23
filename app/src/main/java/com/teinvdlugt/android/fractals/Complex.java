@@ -10,13 +10,29 @@ public class Complex {
     }
 
     public static Complex multiply(Complex c1, Complex c2) {
-        double real = c1.real * c2.real - c1.imaginary * c2.imaginary;
-        double img = c1.real * c2.imaginary + c1.imaginary * c2.real;
+        return c1.multiply(c2);
+    }
+
+    public Complex multiply(Complex other) {
+        double real = this.real * other.real - this.imaginary * other.imaginary;
+        double img = this.real * other.imaginary + this.imaginary * other.real;
         return new Complex(real, img);
     }
 
     public static Complex add(Complex c1, Complex c2) {
-        return new Complex(c1.real + c2.real, c1.imaginary + c2.imaginary);
+        return c1.add(c2);
+    }
+
+    public Complex add(Complex other) {
+        return new Complex(this.real + other.real, this.imaginary + other.imaginary);
+    }
+
+    public double radiusSquared() {
+        return real * real + imaginary * imaginary;
+    }
+
+    public Complex copy() {
+        return new Complex(real, imaginary);
     }
 
     public double getReal() {
