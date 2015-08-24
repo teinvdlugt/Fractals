@@ -213,7 +213,7 @@ public class FractalView extends View {
         widthResolution = w / oldw * widthResolution;
         heightResolution = h / oldh * heightResolution;
 
-        //recalculate();
+        recalculate();
     }
 
     @Override
@@ -276,18 +276,29 @@ public class FractalView extends View {
     }
 
     private void zoomIn() {
-        // TODO: 24-8-2015 !!!
         double startReal = absoluteRealValue(zoomStartX);
         double endReal = absoluteRealValue(zoomEndX);
         double startImg = absoluteImaginaryValue(zoomStartY);
         double endImg = absoluteImaginaryValue(zoomEndY);
-
         double xRange = Math.abs(startReal - endReal);
         double yRange = Math.abs(startImg - endImg);
 
-        calculatingTask.rangeReal = Math.max(xRange, yRange);
-        calculatingTask.startReal = Math.min(startReal, endReal);
-        calculatingTask.startImg = Math.max(startImg, endImg);
+        double bigFactor = rangeReal / rangeImg;
+        double smallFactor = xRange / yRange;
+
+        if (bigFactor > smallFactor) {
+            // Current screen is more horizontal than zoom frame
+            calculatingTask.startImg = Math.max(startImg, endImg);
+            calculatingTask.rangeImg = yRange;
+            calculatingTask.rangeReal = bigFactor / smallFactor * xRange;
+            calculatingTask.startReal = Math.min(startReal, endReal) - Math.abs(xRange - calculatingTask.rangeReal) / 2;
+        } else {
+            // Current screen is more vertical than zoom frame
+            calculatingTask.startReal = Math.min(startReal, endReal);
+            calculatingTask.rangeReal = xRange;
+            calculatingTask.rangeImg = smallFactor / bigFactor * yRange;
+            calculatingTask.startImg = Math.max(startImg, endImg) + Math.abs(yRange - calculatingTask.rangeImg) / 2;
+        }
     }
 
     private void resetCalculatingTask() {
@@ -350,11 +361,7 @@ public class FractalView extends View {
      * @return The real value in the complex field
      */
     protected double absoluteRealValue(float x) {
-        // TODO: 24-8-2015 !!!
-        if (scaledBitmap != null) {
-            return startReal + x / scaledBitmap.getWidth() * rangeReal;
-        }
-        return -1;
+        return startReal + x / getWidth() * rangeReal;
     }
 
     /**
@@ -364,11 +371,7 @@ public class FractalView extends View {
      * @return The imaginary value in the complex field
      */
     protected double absoluteImaginaryValue(float y) {
-        // TODO: 24-8-2015 !!!
-        if (scaledBitmap != null) {
-            return startImg - y / scaledBitmap.getHeight() * rangeReal;
-        }
-        return -1;
+        return startImg - y / getHeight() * rangeImg;
     }
 
     public void setResolution(int resolution) {
