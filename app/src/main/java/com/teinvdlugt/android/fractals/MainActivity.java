@@ -69,4 +69,8 @@ public class MainActivity extends AppCompatActivity {
     public void onClickCancel(View view) {
         fractalView.cancel();
     }
+
+    public void onClickSettings(View view) {
+        drawerLayout.openDrawer(GravityCompat.START);
+    }
 }

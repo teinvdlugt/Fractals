@@ -5,10 +5,39 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <com.teinvdlugt.android.fractals.FractalView
-        android:id="@+id/fractalView"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <com.teinvdlugt.android.fractals.FractalView
+            android:id="@+id/fractalView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <ImageButton
+            android:id="@+id/settingsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="@null"
+            android:contentDescription="@string/action_settings"
+            android:onClick="onClickSettings"
+            android:padding="5dp"
+            android:src="@mipmap/ic_settings_black_24dp" />
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_toEndOf="@id/settingsButton"
+            android:layout_toRightOf="@id/settingsButton"
+            android:background="@null"
+            android:contentDescription="@string/cancel"
+            android:onClick="onClickCancel"
+            android:padding="5dp"
+            android:src="@mipmap/ic_cancel_black_24dp" />
+    </RelativeLayout>
+
 
     <ScrollView
         android:id="@+id/drawer"
@@ -68,14 +97,6 @@
                     android:layout_weight="1"
                     android:onClick="onClickApply"
                     android:text="@string/apply" />
-
-                <Button
-                    style="?attr/buttonBarButtonStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:onClick="onClickCancel"
-                    android:text="@string/cancel" />
 
                 <Button
                     style="?attr/buttonBarButtonStyle"
