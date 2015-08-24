@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.EditText;
 
@@ -21,11 +20,9 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
 
-        resolutionET.setText(fractalView.getResolution() + "");
+        resolutionET.setText(fractalView.getWidthResolution() + "");
         precisionET.setText(fractalView.getPrecision() + "");
         escapeValueET.setText(fractalView.getEscapeValue() + "");
-
-        fractalView.recalculate();
     }
 
     private void initViews() {
@@ -62,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         drawerLayout.closeDrawer(GravityCompat.START);
         fractalView.setStartReal(-2);
         fractalView.setStartImg(2);
-        fractalView.setRange(4);
+        fractalView.setRangeReal(4);
         fractalView.recalculate();
     }
 
