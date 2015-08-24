@@ -1,7 +1,10 @@
 package com.teinvdlugt.android.fractals;
 
 import android.os.Bundle;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.EditText;
 
@@ -9,6 +12,7 @@ public class MainActivity extends AppCompatActivity {
 
     FractalView fractalView;
     EditText resolutionET, precisionET, escapeValueET;
+    DrawerLayout drawerLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initViews() {
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
         fractalView = (FractalView) findViewById(R.id.fractalView);
         resolutionET = (EditText) findViewById(R.id.resolution);
         precisionET = (EditText) findViewById(R.id.precision);
@@ -33,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickApply(View view) {
         applyValues();
+        drawerLayout.closeDrawer(GravityCompat.START);
         fractalView.recalculate();
     }
 
@@ -53,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickRestoreZoom(View view) {
         applyValues();
+        drawerLayout.closeDrawer(GravityCompat.START);
         fractalView.setStartReal(-2);
         fractalView.setStartImg(2);
         fractalView.setRange(4);
