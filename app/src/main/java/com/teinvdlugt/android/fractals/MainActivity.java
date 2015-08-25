@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
 
-        resolutionET.setText(fractalView.getWidthResolution() + "");
+        resolutionET.setText(fractalView.getResolution() + "");
         precisionET.setText(fractalView.getPrecision() + "");
         escapeValueET.setText(fractalView.getEscapeValue() + "");
     }
@@ -57,10 +57,6 @@ public class MainActivity extends AppCompatActivity {
     public void onClickRestoreZoom(View view) {
         applyValues();
         drawerLayout.closeDrawer(GravityCompat.START);
-        fractalView.setStartReal(-2);
-        fractalView.setStartImg(2);
-        fractalView.setRangeReal(4);
-        fractalView.recalculate();
     }
 
     public void onClickCancel(View view) {

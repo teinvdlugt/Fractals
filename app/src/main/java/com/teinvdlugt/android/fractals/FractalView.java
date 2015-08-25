@@ -16,99 +16,89 @@ import java.util.Arrays;
 
 public class FractalView extends View {
 
-    /**
-     * The lowest real value shown
-     */
-    protected double startReal = -2;
-    /**
-     * The highest imaginary value shown
-     */
-    protected double startImg = 2;
-    protected double rangeReal = 4;
-    protected double rangeImg = 4;
-    protected int widthResolution = 512;
-    protected int heightResolution = 512;
-    protected int precision = 400;
-    /**
-     * The bitmap will be updated whilst calculating with for example a new resolution.
-     * {@code updateRows} is the number of rows to include in one update. The higher the
-     * value the higher the performance, but the used memory will increase a bit.
-     */
-    protected int updateRows = 10;
-    protected double escapeValue = 2;
+    protected double startReal = -2, startImg = 2, rangeReal = 4, rangeImg = 4, escapeValue = 2;
+    protected int widthResolution = 512, heightResolution = 512, precision = 400, updateRows = 10;
+    private double backupStartReal = -2, backupStartImg = 2, backupRangeReal = 4, backupRangeImg = 4, backupEscapeValue = 2;
+    private int backupWidthResolution = 512, backupHeightResolution = 512, backupPrecision = 400, backupUpdateRows = 10;
+
     private int physicalWidth, physicalHeight;
     protected Bitmap bitmap;
     protected Bitmap scaledBitmap;
-    protected Paint axisPaint;
-    protected Paint zoomPaint;
     private CalculatingTask calculatingTask;
 
+    protected Paint axisPaint;
+    protected Paint zoomPaint;
+
     private class CalculatingTask extends AsyncTask<Void, Void, Void> {
-        double startReal = -1, startImg = -1, rangeReal = -1, rangeImg = -1, escapeValue = -1;
-        int widthResolution = -1, heightResolution = -1, precision = -1, updateRows = -1;
-        Bitmap backup;
+        double finalStartReal = -1, finalStartImg = -1, finalRangeReal = -1, finalRangeImg = -1, finalEscapeValue = -1;
+        int finalWidthResolution = -1, finalHeightResolution = -1, finalPrecision = -1, finalUpdateRows = -1;
+        /*double backupStartReal = -1, backupStartImg = -1, backupRangeReal = -1, backupRangeImg = -1, backupEscapeValue = -1;
+        int backupWidthResolution = -1, backupHeightResolution = -1, backupPrecision = -1, backupUpdateRows = -1;*/
+        Bitmap backupBitmap;
+        boolean restoreBackup = true;
+
+        OnCancelledListener onCancelledListener;
 
         @Override
         protected void onPreExecute() {
-            // Copy these values so that changes to the FractalView values will
-            // not affect calculating process.
-            if (startReal == -1) startReal = FractalView.this.startReal;
-            if (startImg == -1) startImg = FractalView.this.startImg;
-            if (rangeReal == -1) rangeReal = FractalView.this.rangeReal;
-            if (rangeImg == -1) rangeImg = FractalView.this.rangeImg;
-            if (escapeValue == -1) escapeValue = FractalView.this.escapeValue;
-            if (widthResolution == -1) widthResolution = FractalView.this.widthResolution;
-            if (heightResolution == -1) heightResolution = FractalView.this.heightResolution;
-            if (precision == -1) precision = FractalView.this.precision;
-            if (updateRows == -1) updateRows = FractalView.this.updateRows;
+            // Copy new values to calculate with to the finalValues:
+            finalStartReal = startReal;
+            finalStartImg = startImg;
+            finalRangeReal = rangeReal;
+            finalRangeImg = rangeImg;
+            finalEscapeValue = escapeValue;
+            finalWidthResolution = widthResolution;
+            finalHeightResolution = heightResolution;
+            finalPrecision = precision;
+            finalUpdateRows = updateRows;
         }
 
         @Override
         protected Void doInBackground(Void... params) {
             long time = System.nanoTime();
             if (bitmap != null) {
-                backup = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
+                backupBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
                 if (bitmap.getWidth() != widthResolution || bitmap.getHeight() != heightResolution) {
-                    bitmap = Bitmap.createScaledBitmap(bitmap, widthResolution, heightResolution, false);
+                    bitmap = Bitmap.createScaledBitmap(bitmap, finalWidthResolution, finalHeightResolution, false);
                 }
             } else {
-                bitmap = Bitmap.createBitmap(widthResolution, heightResolution, Bitmap.Config.RGB_565);
+                bitmap = Bitmap.createBitmap(finalWidthResolution, finalHeightResolution, Bitmap.Config.RGB_565);
             }
-            int[] progressLine = new int[widthResolution];
+            int[] progressLine = new int[finalWidthResolution];
             Arrays.fill(progressLine, Color.RED);
 
-            int[] colors = new int[widthResolution * updateRows];
-            for (int y = 0; y < heightResolution; y++) {
+            int[] colors = new int[finalWidthResolution * finalUpdateRows];
+            for (int y = 0; y < finalHeightResolution; y++) {
                 if (isCancelled()) return null;
-                for (int x = 0; x < widthResolution; x++) {
+                for (int x = 0; x < finalWidthResolution; x++) {
                     double cReal = absoluteRealValue(x);
                     double cImg = absoluteImaginaryValue(y);
                     double zReal = cReal, zImg = cImg;
 
                     int iterations = 0;
-                    while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
+                    while (zReal * zReal + zImg * zImg <= finalEscapeValue * finalEscapeValue && iterations < finalPrecision) {
                         double zRealNew = zReal * zReal - zImg * zImg + cReal;
                         zImg = 2 * zReal * zImg + cImg;
                         zReal = zRealNew;
                         iterations++;
                     }
 
-                    colors[(y % updateRows) * widthResolution + x] = iterations == precision ? Color.BLACK : Color.WHITE;
+                    colors[(y % finalUpdateRows) * finalWidthResolution + x] = iterations == finalPrecision ? Color.BLACK : Color.WHITE;
                 }
 
                 if (isCancelled()) return null;
 
-                if ((y + 1) % updateRows == 0) {
-                    bitmap.setPixels(colors, 0, widthResolution, 0, y - updateRows + 1, widthResolution, updateRows);
+                if ((y + 1) % finalUpdateRows == 0) {
+                    bitmap.setPixels(colors, 0, finalWidthResolution, 0, y - finalUpdateRows + 1, finalWidthResolution, finalUpdateRows);
                     if (y + 1 != bitmap.getHeight()) {
-                        bitmap.setPixels(progressLine, 0, widthResolution, 0, y + 1, widthResolution, 1);
+                        bitmap.setPixels(progressLine, 0, finalWidthResolution, 0, y + 1, finalWidthResolution, 1);
                     }
 
                     scaledBitmap = Bitmap.createScaledBitmap(bitmap, physicalWidth, physicalHeight, false);
                     publishProgress();
-                } else if (y == heightResolution - 1) {
-                    bitmap.setPixels(colors, 0, widthResolution, 0, heightResolution - heightResolution % updateRows,
-                            widthResolution, heightResolution % updateRows);
+                } else if (y == finalHeightResolution - 1) {
+                    bitmap.setPixels(colors, 0, finalWidthResolution, 0, finalHeightResolution - finalHeightResolution % finalUpdateRows,
+                            finalWidthResolution, finalHeightResolution % finalUpdateRows);
                     scaledBitmap = Bitmap.createScaledBitmap(bitmap, physicalWidth, physicalHeight, false);
                     publishProgress();
                 }
@@ -128,33 +118,46 @@ public class FractalView extends View {
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            FractalView.this.startReal = startReal;
-            FractalView.this.startImg = startImg;
-            FractalView.this.rangeReal = rangeReal;
-            FractalView.this.rangeImg = rangeImg;
-            FractalView.this.escapeValue = escapeValue;
-            FractalView.this.widthResolution = widthResolution;
-            FractalView.this.heightResolution = heightResolution;
-            FractalView.this.precision = precision;
-            FractalView.this.updateRows = updateRows;
+            Log.d("marshmallow", "onPostExecute");
+            // Change the backup values to the new values which have just been calculated with.
+            updateBackup();
 
             invalidate();
             requestLayout();
-
-            resetCalculatingTask();
         }
 
         @Override
         protected void onCancelled() {
-            if (backup != null) {
-                bitmap = Bitmap.createBitmap(backup, 0, 0, backup.getWidth(), backup.getHeight());
-                scaledBitmap = Bitmap.createScaledBitmap(backup, physicalWidth, physicalHeight, false);
+            if (restoreBackup) {
+                // The backupValues don't have to 'restore' anything. They are just there when you need them.
+                // However, the bitmap (and scaledBitmap) has to be restored by the backupBitmap because onDraw only
+                // draws scaledBitmap to the canvas and not backupBitmap.
+                bitmap = Bitmap.createBitmap(backupBitmap, 0, 0, backupBitmap.getWidth(), backupBitmap.getHeight());
+                scaledBitmap = Bitmap.createScaledBitmap(backupBitmap, physicalWidth, physicalHeight, false);
+
+                invalidate();
+                requestLayout();
+            } else {
+                // Act as if the calculation is properly finished.
+                updateBackup();
             }
+
+            if (onCancelledListener != null) onCancelledListener.onCancelled();
 
             invalidate();
             requestLayout();
+        }
 
-            resetCalculatingTask();
+        private void updateBackup() {
+            backupStartReal = finalStartReal;
+            backupStartImg = finalStartImg;
+            backupRangeReal = finalRangeReal;
+            backupRangeImg = finalRangeImg;
+            backupEscapeValue = finalEscapeValue;
+            backupWidthResolution = finalWidthResolution;
+            backupHeightResolution = finalHeightResolution;
+            backupPrecision = finalPrecision;
+            backupUpdateRows = finalUpdateRows;
         }
 
         /**
@@ -164,7 +167,7 @@ public class FractalView extends View {
          * @return The real value in the complex field
          */
         protected double absoluteRealValue(int column) {
-            return startReal + rangeReal / widthResolution * column;
+            return finalStartReal + finalRangeReal / finalWidthResolution * column;
         }
 
         /**
@@ -174,20 +177,42 @@ public class FractalView extends View {
          * @return The imaginary value in the complex field
          */
         protected double absoluteImaginaryValue(int row) {
-            return startImg - rangeImg / heightResolution * row;
+            return finalStartImg - finalRangeImg / finalHeightResolution * row;
+        }
+
+        public void setRestoreBackup(boolean restoreBackup) {
+            this.restoreBackup = restoreBackup;
+        }
+
+        public void setOnCancelledListener(OnCancelledListener onCancelledListener) {
+            this.onCancelledListener = onCancelledListener;
         }
     }
 
+    /**
+     * Listener with method invoked by CalculatingTask when onCancelled is called.
+     * The reason that it's here and not inside the CalculatingTask is just that
+     * an inner class cannot have a static declaration.
+     */
+    interface OnCancelledListener {
+        void onCancelled();
+    }
+
     public void recalculate() {
-        if (calculatingTask == null || calculatingTask.isCancelled()) {
+        if (calculatingTask != null
+                && calculatingTask.getStatus() == AsyncTask.Status.RUNNING) calculatingTask.cancel(true);
+        calculatingTask = new CalculatingTask();
+        /*if (calculatingTask == null || calculatingTask.getStatus() != AsyncTask.Status.PENDING) {
             calculatingTask = new CalculatingTask();
-        }
+        }*/
         calculatingTask.execute();
     }
 
     public void cancel() {
-        calculatingTask.cancel(true);
-        calculatingTask = new CalculatingTask();
+        if (calculatingTask != null) {
+            calculatingTask.setRestoreBackup(true);
+            calculatingTask.cancel(true);
+        }
     }
 
     @Override
@@ -224,10 +249,10 @@ public class FractalView extends View {
         }
 
         // Draw axes
-        float xAxis = (float) (canvas.getWidth() * (-startReal / rangeReal));
-        float yAxis = (float) (canvas.getHeight() * (startImg / rangeImg));
-        canvas.drawLine(xAxis, 0, xAxis, canvas.getHeight(), axisPaint);
-        canvas.drawLine(0, yAxis, canvas.getWidth(), yAxis, axisPaint);
+        float real0 = (float) (canvas.getWidth() * (-backupStartReal / backupRangeReal));
+        float img0 = (float) (canvas.getHeight() * (backupStartImg / backupRangeImg));
+        canvas.drawLine(real0, 0, real0, canvas.getHeight(), axisPaint);
+        canvas.drawLine(0, img0, canvas.getWidth(), img0, axisPaint);
 
         // Draw zoom indication
         if (zoomStartX != -1 && zoomStartY != -1 && zoomEndX != -1 && zoomEndY != -1) {
@@ -262,8 +287,6 @@ public class FractalView extends View {
                 return false;
             }
             zoomIn();
-            zoomStartX = zoomStartY = zoomEndX = zoomEndY = -1;
-            recalculate();
             return true;
         }
         return super.onTouchEvent(event);
@@ -276,33 +299,49 @@ public class FractalView extends View {
     }
 
     private void zoomIn() {
-        double startReal = absoluteRealValue(zoomStartX);
-        double endReal = absoluteRealValue(zoomEndX);
-        double startImg = absoluteImaginaryValue(zoomStartY);
-        double endImg = absoluteImaginaryValue(zoomEndY);
-        double xRange = Math.abs(startReal - endReal);
-        double yRange = Math.abs(startImg - endImg);
+        OnCancelledListener listener = new OnCancelledListener() {
+            @Override
+            public void onCancelled() {
+                double startReal = absoluteRealValue(zoomStartX);
+                double endReal = absoluteRealValue(zoomEndX);
+                double startImg = absoluteImaginaryValue(zoomStartY);
+                double endImg = absoluteImaginaryValue(zoomEndY);
 
-        double bigFactor = rangeReal / rangeImg;
-        double smallFactor = xRange / yRange;
+                zoomStartX = zoomStartY = zoomEndX = zoomEndY = -1;
 
-        if (bigFactor > smallFactor) {
-            // Current screen is more horizontal than zoom frame
-            calculatingTask.startImg = Math.max(startImg, endImg);
-            calculatingTask.rangeImg = yRange;
-            calculatingTask.rangeReal = bigFactor / smallFactor * xRange;
-            calculatingTask.startReal = Math.min(startReal, endReal) - Math.abs(xRange - calculatingTask.rangeReal) / 2;
+                double xRange = Math.abs(startReal - endReal);
+                double yRange = Math.abs(startImg - endImg);
+
+                double bigFactor = backupRangeReal / backupRangeImg;
+                double smallFactor = xRange / yRange;
+
+                if (bigFactor > smallFactor) {
+                    // Current screen is more horizontal than zoom frame
+                    FractalView.this.startImg = Math.max(startImg, endImg);
+                    FractalView.this.rangeImg = yRange;
+                    FractalView.this.rangeReal = bigFactor / smallFactor * xRange;
+                    FractalView.this.startReal = Math.min(startReal, endReal) - Math.abs(xRange - FractalView.this.rangeReal) / 2;
+                } else {
+                    // Current screen is more vertical than zoom frame
+                    FractalView.this.startReal = Math.min(startReal, endReal);
+                    FractalView.this.rangeReal = xRange;
+                    FractalView.this.rangeImg = smallFactor / bigFactor * yRange;
+                    FractalView.this.startImg = Math.max(startImg, endImg) + Math.abs(yRange - FractalView.this.rangeImg) / 2;
+                }
+
+                recalculate();
+            }
+        };
+
+        if (calculatingTask != null && calculatingTask.getStatus() == AsyncTask.Status.RUNNING) {
+            // Wait for the calculatingTask to be cancelled before executing code in listener.onCancelled()
+            calculatingTask.setOnCancelledListener(listener);
+            calculatingTask.setRestoreBackup(false);
+            calculatingTask.cancel(true);
         } else {
-            // Current screen is more vertical than zoom frame
-            calculatingTask.startReal = Math.min(startReal, endReal);
-            calculatingTask.rangeReal = xRange;
-            calculatingTask.rangeImg = smallFactor / bigFactor * yRange;
-            calculatingTask.startImg = Math.max(startImg, endImg) + Math.abs(yRange - calculatingTask.rangeImg) / 2;
+            // Execute code directly
+            listener.onCancelled();
         }
-    }
-
-    private void resetCalculatingTask() {
-        calculatingTask = new CalculatingTask();
     }
 
     protected int resolveColor(int iterations, int precision) {
@@ -350,8 +389,6 @@ public class FractalView extends View {
         zoomPaint = new Paint();
         axisPaint.setColor(Color.BLACK);
         zoomPaint.setARGB(128, 50, 50, 200);
-
-        calculatingTask = new CalculatingTask();
     }
 
     /**
@@ -361,7 +398,7 @@ public class FractalView extends View {
      * @return The real value in the complex field
      */
     protected double absoluteRealValue(float x) {
-        return startReal + x / getWidth() * rangeReal;
+        return backupStartReal + x / getWidth() * backupRangeReal;
     }
 
     /**
@@ -371,80 +408,41 @@ public class FractalView extends View {
      * @return The imaginary value in the complex field
      */
     protected double absoluteImaginaryValue(float y) {
-        return startImg - y / getHeight() * rangeImg;
+        return backupStartImg - y / getHeight() * backupRangeImg;
     }
 
     public void setResolution(int resolution) {
-        calculatingTask.heightResolution = resolution / calculatingTask.widthResolution * calculatingTask.heightResolution;
-        calculatingTask.widthResolution = resolution;
+        //heightResolution = resolution / widthResolution * heightResolution;
+        heightResolution = resolution * getHeight() / getWidth();
+        widthResolution = resolution;
     }
 
     public int getResolution() {
-        return widthResolution;
-    }
-
-    public int getWidthResolution() {
-        return widthResolution;
-    }
-
-    public void setWidthResolution(int widthResolution) {
-        calculatingTask.widthResolution = widthResolution;
-    }
-
-    public int getHeightResolution() {
-        return heightResolution;
-    }
-
-    public void setHeightResolution(int heightResolution) {
-        calculatingTask.heightResolution = heightResolution;
+        return backupWidthResolution;
     }
 
     public int getPrecision() {
-        return precision;
+        return backupPrecision;
     }
 
     public void setPrecision(int precision) {
-        calculatingTask.precision = precision;
-    }
-
-    public double getStartReal() {
-        return startReal;
-    }
-
-    public void setStartReal(double startReal) {
-        calculatingTask.startReal = startReal;
-    }
-
-    public double getStartImg() {
-        return startImg;
-    }
-
-    public void setStartImg(double startImg) {
-        calculatingTask.startImg = startImg;
-    }
-
-    public double getRangeReal() {
-        return rangeReal;
-    }
-
-    public void setRangeReal(double rangeReal) {
-        calculatingTask.rangeReal = rangeReal;
-    }
-
-    public double getRangeImg() {
-        return rangeImg;
-    }
-
-    public void setRangeImg(double rangeImg) {
-        calculatingTask.rangeImg = rangeImg;
+        this.precision = precision;
     }
 
     public double getEscapeValue() {
-        return escapeValue;
+        return backupEscapeValue;
     }
 
     public void setEscapeValue(double escapeValue) {
-        calculatingTask.escapeValue = escapeValue;
+        this.escapeValue = escapeValue;
+    }
+
+    public int getUpdateRows() {
+        return backupUpdateRows;
+    }
+
+    public void setUpdateRows(int updateRows) {
+        this.updateRows = updateRows;
     }
 
     public FractalView(Context context) {
