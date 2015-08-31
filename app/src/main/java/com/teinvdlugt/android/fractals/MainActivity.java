@@ -56,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickRestoreZoom(View view) {
         applyValues();
+        fractalView.restoreZoom();
         drawerLayout.closeDrawer(GravityCompat.START);
     }
 

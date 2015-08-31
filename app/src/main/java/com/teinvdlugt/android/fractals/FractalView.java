@@ -32,8 +32,6 @@ public class FractalView extends View {
     private class CalculatingTask extends AsyncTask<Void, Void, Void> {
         double finalStartReal = -1, finalStartImg = -1, finalRangeReal = -1, finalRangeImg = -1, finalEscapeValue = -1;
         int finalWidthResolution = -1, finalHeightResolution = -1, finalPrecision = -1, finalUpdateRows = -1;
-        /*double backupStartReal = -1, backupStartImg = -1, backupRangeReal = -1, backupRangeImg = -1, backupEscapeValue = -1;
-        int backupWidthResolution = -1, backupHeightResolution = -1, backupPrecision = -1, backupUpdateRows = -1;*/
         Bitmap backupBitmap;
         boolean restoreBackup = true;
 
@@ -229,6 +227,11 @@ public class FractalView extends View {
             oldw = oldh = Math.min(w, h);
         }
 
+        applyDimensions(w, h, oldw, oldh);
+        recalculate();
+    }
+
+    private void applyDimensions(int w, int h, int oldw, int oldh) {
         double rangeRealDiff = (w - oldw) / (double) oldw * rangeReal;
         double rangeImgDiff = (h - oldh) / (double) oldh * rangeImg;
         startReal = startReal - rangeRealDiff / 2.0;
@@ -237,8 +240,6 @@ public class FractalView extends View {
         rangeImg = rangeImg + rangeImgDiff;
         widthResolution = w / oldw * widthResolution;
         heightResolution = h / oldh * heightResolution;
-
-        recalculate();
     }
 
     @Override
@@ -411,8 +412,17 @@ public class FractalView extends View {
         return backupStartImg - y / getHeight() * backupRangeImg;
     }
 
+    public void restoreZoom() {
+        startReal = -2;
+        rangeReal = rangeImg = 4;
+        startImg = 2;
+
+        int oldSizes = Math.min(getWidth(), getHeight());
+        applyDimensions(getWidth(), getHeight(), oldSizes, oldSizes);
+        recalculate();
+    }
+
     public void setResolution(int resolution) {
-        //heightResolution = resolution / widthResolution * heightResolution;
         heightResolution = resolution * getHeight() / getWidth();
         widthResolution = resolution;
     }
