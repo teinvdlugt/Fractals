@@ -18,6 +18,7 @@ public class FractalView extends View {
     public static final int MANDELBROT_SET = 0;
     public static final int TRICORN = 1;
     public static final int BURNING_SHIP = 2;
+    public static final int TRIOBROT_SET = 3;
 
     protected double startReal = -2, startImg = 2, rangeReal = 4, rangeImg = 4, escapeValue = 2;
     protected int widthResolution = 512, heightResolution = 512, precision = 400, updateRows = 10;
@@ -99,6 +100,14 @@ public class FractalView extends View {
                             while (zReal * zReal + zImg * zImg <= finalEscapeValue * finalEscapeValue && iterations < finalPrecision) {
                                 double zRealNew = zReal * zReal - zImg * zImg + cReal;
                                 zImg = 2 * zReal * -zImg + cImg;
+                                zReal = zRealNew;
+                                iterations++;
+                            }
+                            break;
+                        case TRIOBROT_SET:
+                            while (zReal * zReal + zImg * zImg <= finalEscapeValue * finalEscapeValue && iterations < finalPrecision) {
+                                double zRealNew = zReal * zReal * zReal - zImg * zImg * zReal - 2 * zImg * zImg * zReal + cReal;
+                                zImg = zReal * zReal * zImg - zImg * zImg * zImg + 2 * zReal * zReal * zImg + cImg;
                                 zReal = zRealNew;
                                 iterations++;
                             }

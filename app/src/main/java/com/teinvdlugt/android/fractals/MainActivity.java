@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setSpinnerAdapter() {
-        String[] strings = {"Mandelbrot set", "Tricorn", "Burning ship"};
+        String[] strings = {"Mandelbrot set", "Tricorn", "Burning ship", "Multibrot set (3)"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, strings);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         fractalSpinner.setAdapter(adapter);
