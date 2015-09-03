@@ -8,7 +8,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -53,7 +52,6 @@ public class FractalView extends View {
 
         @Override
         protected Void doInBackground(Void... params) {
-            long time = System.nanoTime();
             if (bitmap != null) {
                 backupBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
                 if (bitmap.getWidth() != widthResolution || bitmap.getHeight() != heightResolution) {
@@ -71,17 +69,26 @@ public class FractalView extends View {
                 for (int x = 0; x < finalWidthResolution; x++) {
                     double cReal = absoluteRealValue(x);
                     double cImg = absoluteImaginaryValue(y);
-                    double zReal = cReal, zImg = cImg;
+                    double zReal = 0, zImg = 0;
 
                     int iterations = 0;
                     while (zReal * zReal + zImg * zImg <= finalEscapeValue * finalEscapeValue && iterations < finalPrecision) {
+                        /*// Mandelbrot set
                         double zRealNew = zReal * zReal - zImg * zImg + cReal;
                         zImg = 2 * zReal * zImg + cImg;
+                        zReal = zRealNew;
+                        iterations++;*/
+
+                        // Burning ship
+                        double zRealNew = zReal*zReal - zImg*zImg + cReal;
+                        zImg = Math.abs(2 * zReal * zImg) + cImg;
                         zReal = zRealNew;
                         iterations++;
                     }
 
-                    colors[(y % finalUpdateRows) * finalWidthResolution + x] = iterations == finalPrecision ? Color.BLACK : Color.WHITE;
+                    colors[(y % finalUpdateRows) * finalWidthResolution + x] =
+                            iterations == finalPrecision ? Color.BLACK : resolveColor(iterations);
+                    //        iterations == finalPrecision ? Color.BLACK : Color.WHITE;
                 }
 
                 if (isCancelled()) return null;
@@ -104,9 +111,79 @@ public class FractalView extends View {
 
             scaledBitmap = Bitmap.createScaledBitmap(bitmap, physicalWidth, physicalHeight, false);
 
-            Log.d("processing time", "Time: " + (System.nanoTime() - time));
-
             return null;
+        }
+
+        protected int resolveColor(int iterations) {
+            double pow = 5.5;
+            double value = Math.pow(Math.pow(iterations, pow) / 0xffffff, 1. / pow);
+            //double value = Math.pow((double) iterations, pow) / 0xffffff;
+
+            if (value >= 1.) return Color.WHITE;
+
+            // 0.00 blue
+            // 0.50 red
+            // 1.00 green
+
+            double valuePerUnitColor = .5 / 255;
+
+            // 0.00 => 255 blue
+            // 0.50 => 0   blue
+            int blue = (int) Math.max(255 - value / valuePerUnitColor, 0);
+
+            // 0.00 => 0   red
+            // 0.50 => 255 red
+            // 1.00 => 0   red
+            int red = (int) Math.max(255 - Math.abs(.5 - value) / valuePerUnitColor, 0);
+            int green = (int) Math.max(255 - (1. - value) / valuePerUnitColor, 0);
+
+            return Color.rgb(red, green, blue);
+
+            /*int color = (int) Math.pow(iterations, pow);
+            if (color > 0xffffff) return Color.WHITE;
+
+            String hexStr = "#" + Integer.toHexString(color);
+            while (hexStr.length() < 7) hexStr += "0";
+
+            return Color.parseColor(hexStr);*/
+
+            /*// white --> green --> red --> blue
+            double value = Math.pow(2, iterations / precision);
+            //double value = Math.pow(-Math.log(iterations/precision), -1);
+            //value = 1.0 / (value * value);
+            // low value => blue
+            // high value => white
+            // 1.0 (highest) value => black
+            if (value >= 1.0) return Color.BLACK;
+
+            // 0.00 blue
+            // 0.33 red
+            // 0.67 green
+            // 0.99 white
+
+            // 0.00 => 255 blue
+            // 0.33 => 0   blue
+            int blue = (int) Math.max((1.0 - value / 0.33) * 255, 0);
+
+            // 0.00 => 0   red
+            // 0.33 => 255 red
+            // 0.67 => 0   red
+            int red = (int) Math.max((1.0 - Math.abs(value - 0.33) / 0.33) * 255, 0);
+            int green = (int) Math.max((1.0 - Math.abs(value - 0.67) / 0.33) * 255, 0);
+
+            // 0.67 => 0.0 white factor
+            // 1.00 => 1.0 white factor
+            double whiteFactor = Math.max((1.0 - Math.abs(value - 1.0) / 0.33), 0);
+
+            // Whitify:
+            // Only green has to be whitified because red and white can never mix.
+            green += (255 - blue) * whiteFactor;
+            red += (255 - red) * whiteFactor;
+            blue += (255 - blue) * whiteFactor;
+
+            Log.d("colors", "value: " + value);
+
+            return Color.rgb(red, green, blue);*/
         }
 
         @Override
@@ -116,7 +193,6 @@ public class FractalView extends View {
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            Log.d("marshmallow", "onPostExecute");
             // Change the backup values to the new values which have just been calculated with.
             updateBackup();
 
@@ -350,46 +426,6 @@ public class FractalView extends View {
             // Execute code directly
             listener.onCancelled();
         }
-    }
-
-    protected int resolveColor(int iterations, int precision) {
-        // white --> green --> red --> blue
-        double value = Math.pow(2, iterations / precision);
-        //double value = Math.pow(-Math.log(iterations/precision), -1);
-        //value = 1.0 / (value * value);
-        // low value => blue
-        // high value => white
-        // 1.0 (highest) value => black
-        if (value >= 1.0) return Color.BLACK;
-
-        // 0.00 blue
-        // 0.33 red
-        // 0.67 green
-        // 0.99 white
-
-        // 0.00 => 255 blue
-        // 0.33 => 0   blue
-        int blue = (int) Math.max((1.0 - value / 0.33) * 255, 0);
-
-        // 0.00 => 0   red
-        // 0.33 => 255 red
-        // 0.67 => 0   red
-        int red = (int) Math.max((1.0 - Math.abs(value - 0.33) / 0.33) * 255, 0);
-        int green = (int) Math.max((1.0 - Math.abs(value - 0.67) / 0.33) * 255, 0);
-
-        // 0.67 => 0.0 white factor
-        // 1.00 => 1.0 white factor
-        double whiteFactor = Math.max((1.0 - Math.abs(value - 1.0) / 0.33), 0);
-
-        // Whitify:
-        // Only green has to be whitified because red and white can never mix.
-        green += (255 - blue) * whiteFactor;
-        red += (255 - red) * whiteFactor;
-        blue += (255 - blue) * whiteFactor;
-
-        Log.d("colors", "value: " + value);
-
-        return Color.rgb(red, green, blue);
     }
 
     protected void init() {
