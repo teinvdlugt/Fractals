@@ -127,11 +127,17 @@ public class FractalView extends View {
         @Override
         protected void onCancelled() {
             if (restoreBackup) {
-                // The backupValues don't have to 'restore' anything. They are just there when you need them.
-                // However, the bitmap (and scaledBitmap) has to be restored by the backupBitmap because onDraw only
+                // The backupValues don't (all) have to 'restore' anything. They are just there when you need them.
+                // However, the bitmap (and scaledBitmap) have to be restored by the backupBitmap because onDraw only
                 // draws scaledBitmap to the canvas and not backupBitmap.
+                // Also the backup of the startReal/Img and rangeReal/Img have to be restored.
                 bitmap = Bitmap.createBitmap(backupBitmap, 0, 0, backupBitmap.getWidth(), backupBitmap.getHeight());
                 scaledBitmap = Bitmap.createScaledBitmap(backupBitmap, physicalWidth, physicalHeight, false);
+
+                startReal = backupStartReal;
+                startImg = backupStartImg;
+                rangeReal = backupRangeReal;
+                rangeImg = backupRangeImg;
 
                 invalidate();
                 requestLayout();
@@ -198,7 +204,8 @@ public class FractalView extends View {
 
     public void recalculate() {
         if (calculatingTask != null
-                && calculatingTask.getStatus() == AsyncTask.Status.RUNNING) calculatingTask.cancel(true);
+                && calculatingTask.getStatus() == AsyncTask.Status.RUNNING)
+            calculatingTask.cancel(true);
         calculatingTask = new CalculatingTask();
         /*if (calculatingTask == null || calculatingTask.getStatus() != AsyncTask.Status.PENDING) {
             calculatingTask = new CalculatingTask();

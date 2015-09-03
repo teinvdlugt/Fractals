@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
 
@@ -23,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
         resolutionET.setText(fractalView.getResolution() + "");
         precisionET.setText(fractalView.getPrecision() + "");
         escapeValueET.setText(fractalView.getEscapeValue() + "");
+
+        setTextWatchers();
     }
 
     private void initViews() {
@@ -31,6 +35,42 @@ public class MainActivity extends AppCompatActivity {
         resolutionET = (EditText) findViewById(R.id.resolution);
         precisionET = (EditText) findViewById(R.id.precision);
         escapeValueET = (EditText) findViewById(R.id.escapeValue);
+    }
+
+    private void setTextWatchers() {
+        resolutionET.addTextChangedListener(new TextWatcher() {
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                try {
+                    fractalView.setResolution(Integer.parseInt(resolutionET.getText().toString()));
+                } catch (NumberFormatException ignored) {/*ignored*/}
+            }
+
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {/*ignored*/}
+
+            public void afterTextChanged(Editable s) {/*ignored*/}
+        });
+        precisionET.addTextChangedListener(new TextWatcher() {
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                try {
+                    fractalView.setPrecision(Integer.parseInt(precisionET.getText().toString()));
+                } catch (NumberFormatException ignored) {/*ignored*/}
+            }
+
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {/*ignored*/}
+
+            public void afterTextChanged(Editable s) {/*ignored*/}
+        });
+        escapeValueET.addTextChangedListener(new TextWatcher() {
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                try {
+                    fractalView.setEscapeValue(Double.parseDouble(escapeValueET.getText().toString()));
+                } catch (NumberFormatException ignored) {/*ignored*/}
+            }
+
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {/*ignored*/}
+
+            public void afterTextChanged(Editable s) {/*ignored*/}
+        });
     }
 
     public void onClickApply(View view) {
