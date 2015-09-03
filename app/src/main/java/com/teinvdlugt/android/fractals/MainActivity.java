@@ -7,13 +7,20 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.Spinner;
 
 public class MainActivity extends AppCompatActivity {
 
     FractalView fractalView;
     EditText resolutionET, precisionET, escapeValueET;
     DrawerLayout drawerLayout;
+    CheckBox colorCB;
+    Spinner fractalSpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +33,8 @@ public class MainActivity extends AppCompatActivity {
         precisionET.setText(fractalView.getPrecision() + "");
         escapeValueET.setText(fractalView.getEscapeValue() + "");
 
+        setSpinnerAdapter();
+        setCheckBox();
         setTextWatchers();
     }
 
@@ -35,6 +44,36 @@ public class MainActivity extends AppCompatActivity {
         resolutionET = (EditText) findViewById(R.id.resolution);
         precisionET = (EditText) findViewById(R.id.precision);
         escapeValueET = (EditText) findViewById(R.id.escapeValue);
+        colorCB = (CheckBox) findViewById(R.id.colorCheckbox);
+        fractalSpinner = (Spinner) findViewById(R.id.fractalSpinner);
+    }
+
+    private void setSpinnerAdapter() {
+        String[] strings = {"Mandelbrot set", "Tricorn", "Burning ship"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, strings);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        fractalSpinner.setAdapter(adapter);
+
+        fractalSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                fractalView.setCurrentFractal(position);
+            }
+
+            public void onNothingSelected(AdapterView<?> parent) {/*ignored*/}
+        });
+
+        fractalSpinner.setSelection(fractalView.getCurrentFractal());
+    }
+
+    private void setCheckBox() {
+        colorCB.setChecked(fractalView.isUseColor());
+        colorCB.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                fractalView.setUseColor(isChecked);
+            }
+        });
     }
 
     private void setTextWatchers() {

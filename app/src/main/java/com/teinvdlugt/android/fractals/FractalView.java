@@ -15,10 +15,16 @@ import java.util.Arrays;
 
 public class FractalView extends View {
 
+    public static final int MANDELBROT_SET = 0;
+    public static final int TRICORN = 1;
+    public static final int BURNING_SHIP = 2;
+
     protected double startReal = -2, startImg = 2, rangeReal = 4, rangeImg = 4, escapeValue = 2;
     protected int widthResolution = 512, heightResolution = 512, precision = 400, updateRows = 10;
     private double backupStartReal = -2, backupStartImg = 2, backupRangeReal = 4, backupRangeImg = 4, backupEscapeValue = 2;
     private int backupWidthResolution = 512, backupHeightResolution = 512, backupPrecision = 400, backupUpdateRows = 10;
+    private int currentFractal = 0;
+    boolean useColor = true;
 
     private int physicalWidth, physicalHeight;
     protected Bitmap bitmap;
@@ -72,23 +78,36 @@ public class FractalView extends View {
                     double zReal = 0, zImg = 0;
 
                     int iterations = 0;
-                    while (zReal * zReal + zImg * zImg <= finalEscapeValue * finalEscapeValue && iterations < finalPrecision) {
-                        /*// Mandelbrot set
-                        double zRealNew = zReal * zReal - zImg * zImg + cReal;
-                        zImg = 2 * zReal * zImg + cImg;
-                        zReal = zRealNew;
-                        iterations++;*/
-
-                        // Burning ship
-                        double zRealNew = zReal*zReal - zImg*zImg + cReal;
-                        zImg = Math.abs(2 * zReal * zImg) + cImg;
-                        zReal = zRealNew;
-                        iterations++;
+                    switch (currentFractal) {
+                        case MANDELBROT_SET:
+                            while (zReal * zReal + zImg * zImg <= finalEscapeValue * finalEscapeValue && iterations < finalPrecision) {
+                                double zRealNew = zReal * zReal - zImg * zImg + cReal;
+                                zImg = 2 * zReal * zImg + cImg;
+                                zReal = zRealNew;
+                                iterations++;
+                            }
+                            break;
+                        case BURNING_SHIP:
+                            while (zReal * zReal + zImg * zImg <= finalEscapeValue * finalEscapeValue && iterations < finalPrecision) {
+                                double zRealNew = zReal * zReal - zImg * zImg + cReal;
+                                zImg = Math.abs(2 * zReal * zImg) + cImg;
+                                zReal = zRealNew;
+                                iterations++;
+                            }
+                            break;
+                        case TRICORN:
+                            while (zReal * zReal + zImg * zImg <= finalEscapeValue * finalEscapeValue && iterations < finalPrecision) {
+                                double zRealNew = zReal * zReal - zImg * zImg + cReal;
+                                zImg = 2 * zReal * -zImg + cImg;
+                                zReal = zRealNew;
+                                iterations++;
+                            }
+                            break;
                     }
 
                     colors[(y % finalUpdateRows) * finalWidthResolution + x] =
-                            iterations == finalPrecision ? Color.BLACK : resolveColor(iterations);
-                    //        iterations == finalPrecision ? Color.BLACK : Color.WHITE;
+                            iterations == finalPrecision ? Color.BLACK :
+                                    useColor ? resolveColor(iterations) : Color.WHITE;
                 }
 
                 if (isCancelled()) return null;
@@ -496,6 +515,22 @@ public class FractalView extends View {
 
     public void setUpdateRows(int updateRows) {
         this.updateRows = updateRows;
+    }
+
+    public int getCurrentFractal() {
+        return currentFractal;
+    }
+
+    public void setCurrentFractal(int currentFractal) {
+        this.currentFractal = currentFractal;
+    }
+
+    public void setUseColor(boolean useColor) {
+        this.useColor = useColor;
+    }
+
+    public boolean isUseColor() {
+        return useColor;
     }
 
     public FractalView(Context context) {
