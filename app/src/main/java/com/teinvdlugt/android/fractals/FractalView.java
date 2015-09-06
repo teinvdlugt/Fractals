@@ -18,7 +18,8 @@ public class FractalView extends View {
     public static final int MANDELBROT_SET = 0;
     public static final int TRICORN = 1;
     public static final int BURNING_SHIP = 2;
-    public static final int TRIOBROT_SET = 3;
+    public static final int MULTIBROT_3 = 3;
+    public static final int MULTIBROT_4 = 4;
 
     protected double startReal = -2, startImg = 2, rangeReal = 4, rangeImg = 4, escapeValue = 2;
     protected int widthResolution = 512, heightResolution = 512, precision = 400, updateRows = 10;
@@ -104,10 +105,25 @@ public class FractalView extends View {
                                 iterations++;
                             }
                             break;
-                        case TRIOBROT_SET:
+                        case MULTIBROT_3:
                             while (zReal * zReal + zImg * zImg <= finalEscapeValue * finalEscapeValue && iterations < finalPrecision) {
                                 double zRealNew = zReal * zReal * zReal - zImg * zImg * zReal - 2 * zImg * zImg * zReal + cReal;
                                 zImg = zReal * zReal * zImg - zImg * zImg * zImg + 2 * zReal * zReal * zImg + cImg;
+                                zReal = zRealNew;
+                                iterations++;
+                            }
+                            break;
+                        case MULTIBROT_4:
+                            while (zReal * zReal + zImg * zImg <= finalEscapeValue * finalEscapeValue && iterations < finalPrecision) {
+                                // (zReal*zReal*zReal - zImg*zImg*zReal - 2*zImg*zImg*zReal + i*zReal*zReal*zImg - i*zImg*zImg*zImg + i*2*zReal*zReal*zImg)*
+                                //                                      (zReal + i*zImg) =
+                                // zReal^4 - zImg^2*zReal^2 - 2*zImg^2*zReal^2 - zReal^2*zImg^2 + zImg^4 - 2*zReal^2*zImg^2
+                                //                          + i*zImg*zReal^3 - i*zImg^3*zReal - i*2*zImg^3*zReal + i*zReal^3*zImg - i*zImg^3*zReal + i*2*zReal^3*zImg =
+                                // zReal^2*zImg^2*(-1 - 2 - 1 - 2) + zReal^4 + zImg^4 +
+                                //                          + i*(zImg^3*zReal*-4 + zImg*zReal^3*4)
+
+                                double zRealNew = -6 * zReal * zReal * zImg * zImg + zReal * zReal * zReal * zReal + zImg * zImg * zImg * zImg + cReal;
+                                zImg = -4 * zImg * zImg * zImg * zReal + 4 * zReal * zReal * zReal * zImg + cImg;
                                 zReal = zRealNew;
                                 iterations++;
                             }
