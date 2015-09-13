@@ -22,11 +22,13 @@ public class FractalView extends View {
     public static final int MULTIBROT_4 = 4;
 
     protected double startReal = -2, startImg = 2, rangeReal = 4, rangeImg = 4, escapeValue = 2;
-    protected int widthResolution = 512, heightResolution = 512, precision = 400, updateRows = 10;
+    protected int widthResolution = 540, heightResolution = 540, precision = 400, updateRows = 10;
     private double backupStartReal = -2, backupStartImg = 2, backupRangeReal = 4, backupRangeImg = 4, backupEscapeValue = 2;
-    private int backupWidthResolution = 512, backupHeightResolution = 512, backupPrecision = 400, backupUpdateRows = 10;
+    private int backupWidthResolution = 540, backupHeightResolution = 540, backupPrecision = 400, backupUpdateRows = 10;
     private int currentFractal = 0;
-    boolean useColor = true;
+    private boolean useColor = true;
+    private double maxColorIterations = 400d;
+    private double colorDistribution = 30;
 
     private int physicalWidth, physicalHeight;
     protected Bitmap bitmap;
@@ -159,9 +161,11 @@ public class FractalView extends View {
         }
 
         protected int resolveColor(int iterations) {
-            double pow = 5.5;
-            double value = Math.pow(Math.pow(iterations, pow) / 0xffffff, 1. / pow);
+            double value = 1 - Math.pow(1 - iterations / maxColorIterations, colorDistribution);
+            //double value = Math.pow(Math.pow(iterations, pow) / 0xffffff, 1. / pow);
             //double value = Math.pow((double) iterations, pow) / 0xffffff;
+
+            //Log.d("colorvalue", value + "");
 
             if (value >= 1.) return Color.WHITE;
 
@@ -365,8 +369,8 @@ public class FractalView extends View {
         startImg = startImg + rangeImgDiff / 2.0;
         rangeReal = rangeReal + rangeRealDiff;
         rangeImg = rangeImg + rangeImgDiff;
-        widthResolution = w / oldw * widthResolution;
-        heightResolution = h / oldh * heightResolution;
+        widthResolution = (int) ((double) w / oldw * widthResolution);
+        heightResolution = (int) ((double) h / oldh * heightResolution);
     }
 
     @Override
@@ -556,6 +560,22 @@ public class FractalView extends View {
 
     public boolean isUseColor() {
         return useColor;
+    }
+
+    public double getMaxColorIterations() {
+        return maxColorIterations;
+    }
+
+    public void setMaxColorIterations(double maxColorIterations) {
+        this.maxColorIterations = maxColorIterations;
+    }
+
+    public double getColorDistribution() {
+        return colorDistribution;
+    }
+
+    public void setColorDistribution(double colorDistribution) {
+        this.colorDistribution = colorDistribution;
     }
 
     public FractalView(Context context) {

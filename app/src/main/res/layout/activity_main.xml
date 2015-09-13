@@ -98,6 +98,30 @@
                 android:layout_height="wrap_content"
                 android:text="Use color" />
 
+            <android.support.design.widget.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <EditText
+                    android:id="@+id/maxColorIterations_editText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Max color iterations"
+                    android:inputType="numberDecimal" />
+            </android.support.design.widget.TextInputLayout>
+
+            <android.support.design.widget.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <EditText
+                    android:id="@+id/colorDistribution_editText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Color distribution"
+                    android:inputType="numberDecimal" />
+            </android.support.design.widget.TextInputLayout>
+
             <LinearLayout
                 style="?attr/buttonBarStyle"
                 android:layout_width="match_parent"

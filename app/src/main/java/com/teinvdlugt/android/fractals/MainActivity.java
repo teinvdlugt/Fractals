@@ -17,7 +17,7 @@ import android.widget.Spinner;
 public class MainActivity extends AppCompatActivity {
 
     FractalView fractalView;
-    EditText resolutionET, precisionET, escapeValueET;
+    EditText resolutionET, precisionET, escapeValueET, maxColorIterationsET, colorDistributionET;
     DrawerLayout drawerLayout;
     CheckBox colorCB;
     Spinner fractalSpinner;
@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
         resolutionET.setText(fractalView.getResolution() + "");
         precisionET.setText(fractalView.getPrecision() + "");
         escapeValueET.setText(fractalView.getEscapeValue() + "");
+        maxColorIterationsET.setText(fractalView.getMaxColorIterations() + "");
+        colorDistributionET.setText(fractalView.getColorDistribution() + "");
 
         setSpinnerAdapter();
         setCheckBox();
@@ -46,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
         escapeValueET = (EditText) findViewById(R.id.escapeValue);
         colorCB = (CheckBox) findViewById(R.id.colorCheckbox);
         fractalSpinner = (Spinner) findViewById(R.id.fractalSpinner);
+        maxColorIterationsET = (EditText) findViewById(R.id.maxColorIterations_editText);
+        colorDistributionET = (EditText) findViewById(R.id.colorDistribution_editText);
     }
 
     private void setSpinnerAdapter() {
@@ -110,6 +114,28 @@ public class MainActivity extends AppCompatActivity {
 
             public void afterTextChanged(Editable s) {/*ignored*/}
         });
+        maxColorIterationsET.addTextChangedListener(new TextWatcher() {
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                try {
+                    fractalView.setMaxColorIterations(Double.parseDouble(maxColorIterationsET.getText().toString()));
+                } catch (NumberFormatException ignored) {/*ignored*/}
+            }
+
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {/*ignored*/}
+
+            public void afterTextChanged(Editable s) {/*ignored*/}
+        });
+        colorDistributionET.addTextChangedListener(new TextWatcher() {
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                try {
+                    fractalView.setColorDistribution(Double.parseDouble(colorDistributionET.getText().toString()));
+                } catch (NumberFormatException ignored) {/*ignored*/}
+            }
+
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {/*ignored*/}
+
+            public void afterTextChanged(Editable s) {/*ignored*/}
+        });
     }
 
     public void onClickApply(View view) {
@@ -130,6 +156,14 @@ public class MainActivity extends AppCompatActivity {
         try {
             double escapeValue = Double.parseDouble(escapeValueET.getText().toString());
             fractalView.setEscapeValue(escapeValue);
+        } catch (NumberFormatException ignored) {/*ignored*/}
+        try {
+            double maxColorIterations = Double.parseDouble(maxColorIterationsET.getText().toString());
+            fractalView.setMaxColorIterations(maxColorIterations);
+        } catch (NumberFormatException ignored) {/*ignored*/}
+        try {
+            double colorDistribution = Double.parseDouble(colorDistributionET.getText().toString());
+            fractalView.setColorDistribution(colorDistribution);
         } catch (NumberFormatException ignored) {/*ignored*/}
     }
 
