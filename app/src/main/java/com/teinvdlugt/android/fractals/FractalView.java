@@ -410,13 +410,17 @@ public class FractalView extends View {
             zoomEndY = -1;
             return true;
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            if (zoomStartX == -1 || zoomStartY == -1) {
+                return false;
+            }
             zoomEndX = event.getX();
             zoomEndY = event.getY();
             invalidate();
             requestLayout();
             return true;
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
-            if (checkTap(event)) {
+            if (zoomStartX == -1 || zoomStartY == -1
+                    || checkTap(event)) {
                 zoomStartX = zoomStartY = zoomEndX = zoomEndY = -1;
                 return false;
             }
@@ -516,8 +520,10 @@ public class FractalView extends View {
     }
 
     public void setResolution(int resolution) {
-        heightResolution = resolution * getHeight() / getWidth();
-        widthResolution = resolution;
+        if (getWidth() > 0) {
+            heightResolution = resolution * getHeight() / getWidth();
+            widthResolution = resolution;
+        }
     }
 
     public int getResolution() {
