@@ -255,16 +255,18 @@ public class FractalView extends View {
                 // However, the bitmap (and scaledBitmap) have to be restored by the backupBitmap because onDraw only
                 // draws scaledBitmap to the canvas and not backupBitmap.
                 // Also the backup of the startReal/Img and rangeReal/Img have to be restored.
-                bitmap = Bitmap.createBitmap(backupBitmap, 0, 0, backupBitmap.getWidth(), backupBitmap.getHeight());
-                scaledBitmap = Bitmap.createScaledBitmap(backupBitmap, physicalWidth, physicalHeight, false);
+                if (backupBitmap != null) {
+                    bitmap = Bitmap.createBitmap(backupBitmap, 0, 0, backupBitmap.getWidth(), backupBitmap.getHeight());
+                    scaledBitmap = Bitmap.createScaledBitmap(backupBitmap, physicalWidth, physicalHeight, false);
 
-                startReal = backupStartReal;
-                startImg = backupStartImg;
-                rangeReal = backupRangeReal;
-                rangeImg = backupRangeImg;
+                    startReal = backupStartReal;
+                    startImg = backupStartImg;
+                    rangeReal = backupRangeReal;
+                    rangeImg = backupRangeImg;
 
-                invalidate();
-                requestLayout();
+                    invalidate();
+                    requestLayout();
+                }
             } else {
                 // Act as if the calculation is properly finished.
                 updateBackup();

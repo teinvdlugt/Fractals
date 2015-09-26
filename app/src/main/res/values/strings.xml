@@ -6,4 +6,10 @@
     <string name="apply">Apply</string>
     <string name="restore_zoom">Restore zoom</string>
     <string name="cancel">Cancel</string>
+    <string name="resolution_in_px">Resolution in px</string>
+    <string name="precision">Precision</string>
+    <string name="escape_value">Escape value</string>
+    <string name="use_color">Use color</string>
+    <string name="max_color_iterations">Max color iterations</string>
+    <string name="color_distribution">Color distribution</string>
 </resources>

@@ -52,38 +52,41 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Resolution in px:" />
-
-            <EditText
-                android:id="@+id/resolution"
+            <android.support.design.widget.TextInputLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:layout_height="wrap_content">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Precision:" />
+                <EditText
+                    android:hint="@string/resolution_in_px"
+                    android:id="@+id/resolution"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </android.support.design.widget.TextInputLayout>
 
-            <EditText
-                android:id="@+id/precision"
+            <android.support.design.widget.TextInputLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:layout_height="wrap_content">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Escape value:" />
+                <EditText
+                    android:hint="@string/precision"
+                    android:id="@+id/precision"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </android.support.design.widget.TextInputLayout>
 
-            <EditText
-                android:id="@+id/escapeValue"
+            <android.support.design.widget.TextInputLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="numberDecimal" />
+                android:layout_height="wrap_content">
+
+                <EditText
+                    android:hint="@string/escape_value"
+                    android:id="@+id/escapeValue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal" />
+            </android.support.design.widget.TextInputLayout>
 
             <Spinner
                 android:id="@+id/fractalSpinner"
@@ -96,7 +99,7 @@
                 android:id="@+id/colorCheckbox"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Use color" />
+                android:text="@string/use_color" />
 
             <android.support.design.widget.TextInputLayout
                 android:layout_width="match_parent"
@@ -106,7 +109,7 @@
                     android:id="@+id/maxColorIterations_editText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Max color iterations"
+                    android:hint="@string/max_color_iterations"
                     android:inputType="numberDecimal" />
             </android.support.design.widget.TextInputLayout>
 
@@ -118,7 +121,7 @@
                     android:id="@+id/colorDistribution_editText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Color distribution"
+                    android:hint="@string/color_distribution"
                     android:inputType="numberDecimal" />
             </android.support.design.widget.TextInputLayout>
 
