@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.AsyncTask;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -18,6 +19,13 @@ public class FractalView2 extends View {
     private List<double[]> wanted = new ArrayList<>();
     private Bitmap bitmap;
     private Paint paint;
+    private boolean calculating = false;
+    private CalculatingTask calculatingTask;
+
+    private double escapeValue = 2;
+    private double precision = 400;
+    private double maxColorIterations = 400;
+    private double colorDistribution = 30;
 
     private double startReal, startImg, rangeReal, rangeImg;
 
@@ -83,8 +91,79 @@ public class FractalView2 extends View {
         }
     }
 
-    private void calculateWanted() {
+    /**
+     * Set {@code calculating} member variable to false to cancel instead of calling task.cancel(boolean);
+     */
+    private class CalculatingTask extends AsyncTask<Void, int[], Void> {
+        @Override
+        protected void onPreExecute() {
+            calculating = true;
+        }
 
+        @Override
+        protected Void doInBackground(Void... params) {
+            List<int[]> batch = new ArrayList<>();
+
+            while (!wanted.isEmpty() && calculating) {
+                double[] pos = wanted.remove(0);
+
+                double cReal = pos[0];
+                double cImg = pos[1];
+                double zReal = 0, zImg = 0;
+
+                int iterations = 0;
+                while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
+                    double zRealNew = zReal * zReal - zImg * zImg + cReal;
+                    zImg = 2 * zReal * zImg + cImg;
+                    zReal = zRealNew;
+                    iterations++;
+                }
+
+                int xpx = (int) ((cReal - startReal) / rangeReal * bitmap.getWidth());
+                int ypx = (int) ((cImg - startImg) / rangeImg * bitmap.getHeight());
+                int color = iterations == precision ? Color.BLACK : resolveColor(iterations);
+                // TODO useColor ? resolveColor(iterations) : Color.WHITE;
+                batch.add(new int[]{xpx, ypx, color});
+
+                if (batch.size() > 20 && calculating) {
+                    int[][] array = new int[3][batch.size()];
+                    for (int i = 0; i < batch.size(); i++) {
+                        array[i] = batch.get(i);
+                    }
+                    publishProgress(array);
+                    batch.clear();
+                }
+            }
+
+            calculating = false;
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(int[]... values) {
+            for (int[] pixel : values) {
+                bitmap.setPixel(pixel[0], pixel[1], pixel[2]);
+            }
+            invalidate();
+        }
+
+        protected int resolveColor(int iterations) {
+            // See FractalView.resolveColor() for comments
+            double value = 1 - Math.pow(1 - iterations / maxColorIterations, colorDistribution);
+            if (value >= 1.) return Color.WHITE;
+            double valuePerUnitColor = .5 / 255;
+            int blue = (int) Math.max(255 - value / valuePerUnitColor, 0);
+            int red = (int) Math.max(255 - Math.abs(.5 - value) / valuePerUnitColor, 0);
+            int green = (int) Math.max(255 - (1. - value) / valuePerUnitColor, 0);
+            return Color.rgb(red, green, blue);
+        }
+    }
+
+    private void calculateWanted() {
+        if (!calculating) {
+            calculatingTask = new CalculatingTask();
+            calculatingTask.execute();
+        }
     }
 
     private float prevXDrag1 = -1, prevYDrag1 = -1;
