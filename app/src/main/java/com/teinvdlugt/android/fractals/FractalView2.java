@@ -16,6 +16,11 @@ import java.util.Arrays;
 import java.util.List;
 
 public class FractalView2 extends View {
+    public static final int MANDELBROT_SET = 0;
+    public static final int TRICORN = 1;
+    public static final int BURNING_SHIP = 2;
+    public static final int MULTIBROT_3 = 3;
+    public static final int MULTIBROT_4 = 4;
 
     private int[] bitmap;
     private int bitmapWidth, bitmapHeight;
@@ -23,9 +28,11 @@ public class FractalView2 extends View {
     private Paint paint;
     private boolean calculating = false;
     private CalculatingTask calculatingTask;
+    private int fractal = MANDELBROT_SET;
+    private boolean useColor = true;
 
-    protected double startReal = -2, startImg = 2, rangeReal = 4, rangeImg = 4, escapeValue = 2;
-    private double precision = 100;
+    private double startReal = -2, startImg = 2, rangeReal = 4, rangeImg = 4, escapeValue = 2;
+    private int precision = 100;
     private double maxColorIterations = 400;
     private double colorDistribution = 30;
 
@@ -196,17 +203,59 @@ public class FractalView2 extends View {
                 }
 
                 int iterations = 0;
-                while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
-                    double zRealNew = zReal * zReal - zImg * zImg + cReal;
-                    zImg = 2 * zReal * zImg + cImg;
-                    zReal = zRealNew;
-                    iterations++;
+                switch (fractal) {
+                    case MANDELBROT_SET:
+                        while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
+                            double zRealNew = zReal * zReal - zImg * zImg + cReal;
+                            zImg = 2 * zReal * zImg + cImg;
+                            zReal = zRealNew;
+                            iterations++;
+                        }
+                        break;
+                    case BURNING_SHIP:
+                        while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
+                            double zRealNew = zReal * zReal - zImg * zImg + cReal;
+                            zImg = Math.abs(2 * zReal * zImg) + cImg;
+                            zReal = zRealNew;
+                            iterations++;
+                        }
+                        break;
+                    case TRICORN:
+                        while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
+                            double zRealNew = zReal * zReal - zImg * zImg + cReal;
+                            zImg = 2 * zReal * -zImg + cImg;
+                            zReal = zRealNew;
+                            iterations++;
+                        }
+                        break;
+                    case MULTIBROT_3:
+                        while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
+                            double zRealNew = zReal * zReal * zReal - zImg * zImg * zReal - 2 * zImg * zImg * zReal + cReal;
+                            zImg = zReal * zReal * zImg - zImg * zImg * zImg + 2 * zReal * zReal * zImg + cImg;
+                            zReal = zRealNew;
+                            iterations++;
+                        }
+                        break;
+                    case MULTIBROT_4:
+                        while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
+                            // (zReal*zReal*zReal - zImg*zImg*zReal - 2*zImg*zImg*zReal + i*zReal*zReal*zImg - i*zImg*zImg*zImg + i*2*zReal*zReal*zImg)*
+                            //                                      (zReal + i*zImg) =
+                            // zReal^4 - zImg^2*zReal^2 - 2*zImg^2*zReal^2 - zReal^2*zImg^2 + zImg^4 - 2*zReal^2*zImg^2
+                            //                          + i*zImg*zReal^3 - i*zImg^3*zReal - i*2*zImg^3*zReal + i*zReal^3*zImg - i*zImg^3*zReal + i*2*zReal^3*zImg =
+                            // zReal^2*zImg^2*(-1 - 2 - 1 - 2) + zReal^4 + zImg^4 +
+                            //                          + i*(zImg^3*zReal*-4 + zImg*zReal^3*4)
+
+                            double zRealNew = -6 * zReal * zReal * zImg * zImg + zReal * zReal * zReal * zReal + zImg * zImg * zImg * zImg + cReal;
+                            zImg = -4 * zImg * zImg * zImg * zReal + 4 * zReal * zReal * zReal * zImg + cImg;
+                            zReal = zRealNew;
+                            iterations++;
+                        }
+                        break;
                 }
 
                 int xpx = (int) Math.round((cReal - startReal) / rangeReal * bitmapWidth);
                 int ypx = (int) Math.round((startImg - cImg) / rangeImg * bitmapHeight);
-                int color = iterations == precision ? Color.BLACK : resolveColor(iterations);
-                // TODO useColor ? resolveColor(iterations) : Color.WHITE;
+                int color = iterations == precision ? Color.BLACK : useColor ? resolveColor(iterations) : Color.WHITE;
                 batch[i] = (new int[]{xpx, ypx, color});
 
                 if (!calculating) break;
@@ -344,6 +393,68 @@ public class FractalView2 extends View {
             default:
                 return false;
         }
+    }
+
+    public void cancel() {
+        calculating = false;
+    }
+
+    public void restoreZoom() {
+        startReal = -2;
+        rangeReal = rangeImg = 4;
+        startImg = 2;
+
+        int oldSizes = Math.min(getWidth(), getHeight());
+        applyDimensions(getWidth(), getHeight(), oldSizes, oldSizes);
+        startOver();
+    }
+
+    public double getColorDistribution() {
+        return colorDistribution;
+    }
+
+    public void setColorDistribution(double colorDistribution) {
+        this.colorDistribution = colorDistribution;
+    }
+
+    public double getMaxColorIterations() {
+        return maxColorIterations;
+    }
+
+    public void setMaxColorIterations(double maxColorIterations) {
+        this.maxColorIterations = maxColorIterations;
+    }
+
+    public double getEscapeValue() {
+        return escapeValue;
+    }
+
+    public void setEscapeValue(double escapeValue) {
+        this.escapeValue = escapeValue;
+    }
+
+    public int getPrecision() {
+        return precision;
+    }
+
+    public void setPrecision(int precision) {
+        this.precision = precision;
+    }
+
+    public int getFractal() {
+        return fractal;
+    }
+
+    public void setFractal(int fractal) {
+        this.fractal = fractal;
+    }
+
+    public boolean isUseColor() {
+        return useColor;
+    }
+
+    public void setUseColor(boolean useColor) {
+        this.useColor = useColor;
     }
 
     public FractalView2(Context context) {
