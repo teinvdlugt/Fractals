@@ -17,7 +17,7 @@ import android.widget.Spinner;
 
 public class MainActivity extends AppCompatActivity {
 
-    FractalView fractalView;
+    FractalView2 fractalView;
     EditText resolutionET, precisionET, escapeValueET, maxColorIterationsET, colorDistributionET;
     DrawerLayout drawerLayout;
     CheckBox colorCB;
@@ -30,11 +30,11 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
 
-        resolutionET.setText(fractalView.getResolution() + "");
+        /*resolutionET.setText(fractalView.getResolution() + "");
         precisionET.setText(fractalView.getPrecision() + "");
         escapeValueET.setText(fractalView.getEscapeValue() + "");
         maxColorIterationsET.setText(fractalView.getMaxColorIterations() + "");
-        colorDistributionET.setText(fractalView.getColorDistribution() + "");
+        colorDistributionET.setText(fractalView.getColorDistribution() + "");*/
 
         setSpinnerAdapter();
         setCheckBox();
@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initViews() {
         drawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
-        fractalView = (FractalView) findViewById(R.id.fractalView);
+        fractalView = (FractalView2) findViewById(R.id.fractalView);
         resolutionET = (EditText) findViewById(R.id.resolution);
         precisionET = (EditText) findViewById(R.id.precision);
         escapeValueET = (EditText) findViewById(R.id.escapeValue);
@@ -62,124 +62,125 @@ public class MainActivity extends AppCompatActivity {
         fractalSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                fractalView.setCurrentFractal(position);
+                // fractalView.setCurrentFractal(position);
             }
 
             public void onNothingSelected(AdapterView<?> parent) {/*ignored*/}
         });
 
-        fractalSpinner.setSelection(fractalView.getCurrentFractal());
+        // fractalSpinner.setSelection(fractalView.getCurrentFractal());
     }
 
     private void setCheckBox() {
-        colorCB.setChecked(fractalView.isUseColor());
+        /*colorCB.setChecked(fractalView.isUseColor());
         colorCB.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 fractalView.setUseColor(isChecked);
             }
-        });
+        });*/
     }
 
     private void setTextWatchers() {
-        resolutionET.addTextChangedListener(new TextWatcher() {
+        /*resolutionET.addTextChangedListener(new TextWatcher() {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 try {
                     fractalView.setResolution(Integer.parseInt(resolutionET.getText().toString()));
-                } catch (NumberFormatException ignored) {/*ignored*/}
+                } catch (NumberFormatException ignored) {*//*ignored*//*}
             }
 
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {/*ignored*/}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {*//*ignored*//*}
 
-            public void afterTextChanged(Editable s) {/*ignored*/}
+            public void afterTextChanged(Editable s) {*//*ignored*//*}
         });
         precisionET.addTextChangedListener(new TextWatcher() {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 try {
                     fractalView.setPrecision(Integer.parseInt(precisionET.getText().toString()));
-                } catch (NumberFormatException ignored) {/*ignored*/}
+                } catch (NumberFormatException ignored) {*//*ignored*//*}
             }
 
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {/*ignored*/}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {*//*ignored*//*}
 
-            public void afterTextChanged(Editable s) {/*ignored*/}
+            public void afterTextChanged(Editable s) {*//*ignored*//*}
         });
         escapeValueET.addTextChangedListener(new TextWatcher() {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 try {
                     fractalView.setEscapeValue(Double.parseDouble(escapeValueET.getText().toString()));
-                } catch (NumberFormatException ignored) {/*ignored*/}
+                } catch (NumberFormatException ignored) {*//*ignored*//*}
             }
 
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {/*ignored*/}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {*//*ignored*//*}
 
-            public void afterTextChanged(Editable s) {/*ignored*/}
+            public void afterTextChanged(Editable s) {*//*ignored*//*}
         });
         maxColorIterationsET.addTextChangedListener(new TextWatcher() {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 try {
                     fractalView.setMaxColorIterations(Double.parseDouble(maxColorIterationsET.getText().toString()));
-                } catch (NumberFormatException ignored) {/*ignored*/}
+                } catch (NumberFormatException ignored) {*//*ignored*//*}
             }
 
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {/*ignored*/}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {*//*ignored*//*}
 
-            public void afterTextChanged(Editable s) {/*ignored*/}
+            public void afterTextChanged(Editable s) {*//*ignored*//*}
         });
         colorDistributionET.addTextChangedListener(new TextWatcher() {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 try {
                     fractalView.setColorDistribution(Double.parseDouble(colorDistributionET.getText().toString()));
-                } catch (NumberFormatException ignored) {/*ignored*/}
+                } catch (NumberFormatException ignored) {*//*ignored*//*}
             }
 
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {/*ignored*/}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {*//*ignored*//*}
 
-            public void afterTextChanged(Editable s) {/*ignored*/}
-        });
+            public void afterTextChanged(Editable s) {*//*ignored*//*}
+        });*/
     }
 
     public void onClickApply(View view) {
-        applyValues();
+        fractalView.startOver();
+        /*applyValues();
         drawerLayout.closeDrawer(GravityCompat.START);
-        fractalView.recalculate();
+        fractalView.recalculate();*/
     }
 
     public void applyValues() {
-        try {
+        /*try {
             int resolution = Integer.parseInt(resolutionET.getText().toString());
             fractalView.setResolution(resolution);
-        } catch (NumberFormatException ignored) {/*ignored*/}
+        } catch (NumberFormatException ignored) {*//*ignored*//*}
         try {
             int precision = Integer.parseInt(precisionET.getText().toString());
             fractalView.setPrecision(precision);
-        } catch (NumberFormatException ignored) {/*ignored*/}
+        } catch (NumberFormatException ignored) {*//*ignored*//*}
         try {
             double escapeValue = Double.parseDouble(escapeValueET.getText().toString());
             fractalView.setEscapeValue(escapeValue);
-        } catch (NumberFormatException ignored) {/*ignored*/}
+        } catch (NumberFormatException ignored) {*//*ignored*//*}
         try {
             double maxColorIterations = Double.parseDouble(maxColorIterationsET.getText().toString());
             fractalView.setMaxColorIterations(maxColorIterations);
-        } catch (NumberFormatException ignored) {/*ignored*/}
+        } catch (NumberFormatException ignored) {*//*ignored*//*}
         try {
             double colorDistribution = Double.parseDouble(colorDistributionET.getText().toString());
             fractalView.setColorDistribution(colorDistribution);
-        } catch (NumberFormatException ignored) {/*ignored*/}
+        } catch (NumberFormatException ignored) {*//*ignored*//*}*/
     }
 
     public void onClickRestoreZoom(View view) {
-        applyValues();
+        /*applyValues();
         fractalView.restoreZoom();
-        drawerLayout.closeDrawer(GravityCompat.START);
+        drawerLayout.closeDrawer(GravityCompat.START);*/
     }
 
     public void onClickCancel(View view) {
-        fractalView.cancel();
+        // fractalView.cancel();
     }
 
     public void onClickSettings(View view) {
-        drawerLayout.openDrawer(GravityCompat.START);
+        // drawerLayout.openDrawer(GravityCompat.START);
     }
 
     @Override

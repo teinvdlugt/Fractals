@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -22,18 +23,55 @@ public class FractalView2 extends View {
     private boolean calculating = false;
     private CalculatingTask calculatingTask;
 
-    private double escapeValue = 2;
+    protected double startReal = -2, startImg = 2, rangeReal = 4, rangeImg = 4, escapeValue = 2;
     private double precision = 400;
     private double maxColorIterations = 400;
     private double colorDistribution = 30;
-
-    private double startReal, startImg, rangeReal, rangeImg;
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
         canvas.drawBitmap(Bitmap.createScaledBitmap(bitmap, getWidth(), getHeight(), false), 0, 0, paint);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        calculating = false;
+
+        if (oldw == 0 && oldh == 0) {
+            // Pretend to be coming from a square, because standard values
+            // (startReal -2, rangeReal 4, startImg 2, rangeImg 4) 'presume'
+            // a square layout
+            oldw = oldh = Math.min(w, h);
+        }
+
+        applyDimensions(w, h, oldw, oldh);
+        // startOver();
+    }
+
+    private void applyDimensions(int w, int h, int oldw, int oldh) {
+        double rangeRealDiff = (w - oldw) / (double) oldw * rangeReal;
+        double rangeImgDiff = (h - oldh) / (double) oldh * rangeImg;
+        startReal = startReal - rangeRealDiff / 2.0;
+        startImg = startImg + rangeImgDiff / 2.0;
+        rangeReal = rangeReal + rangeRealDiff;
+        rangeImg = rangeImg + rangeImgDiff;
+        bitmap = Bitmap.createBitmap(w / 20, h / 20, Bitmap.Config.RGB_565);
+        /*widthResolution = (int) ((double) w / oldw * widthResolution);
+        heightResolution = (int) ((double) h / oldh * heightResolution);*/
+    }
+
+    public void startOver() {
+        wanted.clear();
+        for (int x = 0; x < bitmap.getWidth(); x++) {
+            for (int y = 0; y < bitmap.getHeight(); y++) {
+                wanted.add(new double[]{startReal + (double) x / bitmap.getWidth() * rangeReal,
+                        startImg - (double) y / bitmap.getHeight() * rangeImg});
+            }
+        }
+        calculateWanted();
     }
 
     private void move(double x, double y) {
@@ -120,13 +158,13 @@ public class FractalView2 extends View {
                 }
 
                 int xpx = (int) ((cReal - startReal) / rangeReal * bitmap.getWidth());
-                int ypx = (int) ((cImg - startImg) / rangeImg * bitmap.getHeight());
+                int ypx = (int) ((startImg - cImg) / rangeImg * bitmap.getHeight());
                 int color = iterations == precision ? Color.BLACK : resolveColor(iterations);
                 // TODO useColor ? resolveColor(iterations) : Color.WHITE;
                 batch.add(new int[]{xpx, ypx, color});
 
                 if (batch.size() > 20 && calculating) {
-                    int[][] array = new int[3][batch.size()];
+                    int[][] array = new int[batch.size()][3];
                     for (int i = 0; i < batch.size(); i++) {
                         array[i] = batch.get(i);
                     }
