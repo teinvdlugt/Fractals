@@ -124,7 +124,10 @@ public class FractalView2 extends View {
     }
 
     private void zoom(double factor, double x, double y) {
-        if (factor == 1) move(x, y);
+        if (factor == 1) {
+            move(x, y);
+            return;
+        }
         rangeReal *= factor;
         rangeImg *= factor;
 
@@ -135,16 +138,26 @@ public class FractalView2 extends View {
 
         for (int xpx = 0; xpx < bitmapWidth; xpx++) {
             for (int ypx = 0; ypx < bitmapHeight; ypx++) {
-                int origX = (int) Math.round(xpx * factor);
-                int origY = (int) Math.round(ypx * factor);
+                double origXDouble = xpx * factor;
+                double origYDouble = ypx * factor;
+                int origX = (int) origXDouble;
+                int origY = (int) origYDouble;
+                double origXLoss = (origXDouble - origX) / factor;
+                double origYLoss = (origYDouble - origY) / factor;
+
                 // TODO: 7-2-2016 Move according to xBmpPixels and yBmpPixels
                 int color;
                 if (origX < 0 || origY < 0 || origX >= bitmapWidth || origY >= bitmapHeight) {
                     color = Color.BLACK;
                     wanted.add(new double[]{
-                            startReal + xpx / bitmapWidth * rangeReal,
-                            startImg + ypx / bitmapHeight * rangeImg});
+                            startReal + (double) xpx / bitmapWidth * rangeReal,
+                            startImg - (double) ypx / bitmapHeight * rangeImg});
                 } else {
+                    if (origXLoss >= 1 || origYLoss >= 1) {
+                        wanted.add(new double[]{
+                                startReal + (double) xpx / bitmapWidth * rangeReal,
+                                startImg - (double) ypx / bitmapHeight * rangeImg});
+                    }
                     color = copy[bitmapWidth * origY + origX];
                 }
                 bitmap[bitmapWidth * ypx + xpx] = color;
