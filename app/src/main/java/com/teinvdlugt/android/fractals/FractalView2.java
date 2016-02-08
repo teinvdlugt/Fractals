@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -87,7 +88,7 @@ public class FractalView2 extends View {
     private void move(double x, double y) {
         if (x == 0 && y == 0) return;
         startReal += x;
-        startImg += y;
+        startImg -= y;
 
         double xBmpPixelsDouble = x / rangeReal * bitmapWidth;
         double yBmpPixelsDouble = y / rangeImg * bitmapHeight;
@@ -111,9 +112,10 @@ public class FractalView2 extends View {
                 int color;
                 if (origX < 0 || origY < 0 || origX >= bitmapWidth || origY >= bitmapHeight) {
                     color = Color.BLACK;
+                    double img = startImg - (double) ypx / bitmapHeight * rangeImg;
                     wanted.add(new double[]{
-                            startReal + xpx / bitmapWidth * rangeReal,
-                            startImg + ypx / bitmapHeight * rangeImg});
+                            startReal + (double) xpx / bitmapWidth * rangeReal,
+                            img});
                 } else {
                     color = copy[bitmapWidth * origY + origX];
                 }
@@ -165,9 +167,14 @@ public class FractalView2 extends View {
             while (!wanted.isEmpty() && calculating) {
                 double[] pos = wanted.remove(0);
 
-                double cReal = pos[0];
-                double cImg = pos[1];
+                final double cReal = pos[0];
+                final double cImg = pos[1];
                 double zReal = 0, zImg = 0;
+
+                if (cImg < startImg - rangeImg || cImg > startImg || cReal > rangeImg + startImg || cReal < startReal) {
+                    // Complex number is off-screen, so there's no use calculating its value
+                    continue;
+                }
 
                 int iterations = 0;
                 while (zReal * zReal + zImg * zImg <= escapeValue * escapeValue && iterations < precision) {
@@ -200,7 +207,9 @@ public class FractalView2 extends View {
         @Override
         protected void onProgressUpdate(int[]... values) {
             for (int[] pixel : values) {
-                bitmap[bitmapWidth * pixel[1] + pixel[0]] = pixel[2];
+                try {
+                    bitmap[bitmapWidth * pixel[1] + pixel[0]] = pixel[2];
+                } catch (IndexOutOfBoundsException ignored) {}
             }
             invalidate();
         }
@@ -295,7 +304,7 @@ public class FractalView2 extends View {
             case MotionEvent.ACTION_UP:
                 prevXDrag1 = prevXDrag2 = prevYDrag1 = prevYDrag2 =
                         pointerId2 = pointerId1 = -1;
-                // calculateWanted();
+                calculateWanted();
                 return false;
             case MotionEvent.ACTION_POINTER_UP:
                 int pointerIndex = event.getActionIndex();
