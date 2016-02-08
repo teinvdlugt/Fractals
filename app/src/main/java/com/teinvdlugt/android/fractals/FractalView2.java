@@ -61,8 +61,8 @@ public class FractalView2 extends View {
         startImg = startImg + rangeImgDiff / 2.0;
         rangeReal = rangeReal + rangeRealDiff;
         rangeImg = rangeImg + rangeImgDiff;
-        bitmapWidth = w / 10;
-        bitmapHeight = h / 10;
+        bitmapWidth = w / 8;
+        bitmapHeight = h / 8;
         bitmap = new int[bitmapWidth * bitmapHeight];
         /*widthResolution = (int) ((double) w / oldw * widthResolution);
         heightResolution = (int) ((double) h / oldh * heightResolution);*/
@@ -124,30 +124,32 @@ public class FractalView2 extends View {
     }
 
     private void zoom(double factor, double x, double y) {
-        /*if (factor == 1) move(x, y);
+        if (factor == 1) move(x, y);
+        rangeReal *= factor;
+        rangeImg *= factor;
 
         // int xBmpPixels = (int) (x / rangeReal * bitmap.getWidth());
         // int yBmpPixels = (int) (y / rangeImg * bitmap.getHeight());
 
-        Bitmap copy = bitmap.copy(Bitmap.Config.RGB_565, false);
+        int[] copy = Arrays.copyOf(bitmap, bitmap.length);
 
-        for (int xpx = 0; xpx < bitmap.getWidth(); xpx++) {
-            for (int ypx = 0; ypx < bitmap.getHeight(); ypx++) {
-                int origX = (int) Math.round(xpx / factor);
-                int origY = (int) Math.round(ypx / factor);
+        for (int xpx = 0; xpx < bitmapWidth; xpx++) {
+            for (int ypx = 0; ypx < bitmapHeight; ypx++) {
+                int origX = (int) Math.round(xpx * factor);
+                int origY = (int) Math.round(ypx * factor);
                 // TODO: 7-2-2016 Move according to xBmpPixels and yBmpPixels
                 int color;
-                if (origX < 0 || origY < 0 || origX > copy.getWidth() || origY > copy.getHeight()) {
+                if (origX < 0 || origY < 0 || origX >= bitmapWidth || origY >= bitmapHeight) {
                     color = Color.BLACK;
                     wanted.add(new double[]{
-                            startReal + xpx / bitmap.getWidth() * rangeReal,
-                            startImg + ypx / bitmap.getHeight() * rangeImg});
+                            startReal + xpx / bitmapWidth * rangeReal,
+                            startImg + ypx / bitmapHeight * rangeImg});
                 } else {
-                    color = copy.getPixel(origX, origY);
+                    color = copy[bitmapWidth * origY + origX];
                 }
-                bitmap.setPixel(xpx, ypx, color);
+                bitmap[bitmapWidth * ypx + xpx] = color;
             }
-        }*/
+        }
     }
 
     /**
@@ -168,6 +170,8 @@ public class FractalView2 extends View {
 
             while (!wanted.isEmpty() && calculating) {
                 double[] pos = wanted.remove(0);
+
+                if (pos == null) continue;
 
                 final double cReal = pos[0];
                 final double cImg = pos[1];
