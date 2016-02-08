@@ -8,7 +8,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -155,6 +154,8 @@ public class FractalView2 extends View {
      * Set {@code calculating} member variable to false to cancel instead of calling task.cancel(boolean);
      */
     private class CalculatingTask extends AsyncTask<Void, int[], Void> {
+        private final int batchSize = 20;
+
         @Override
         protected void onPreExecute() {
             calculating = true;
@@ -162,7 +163,8 @@ public class FractalView2 extends View {
 
         @Override
         protected Void doInBackground(Void... params) {
-            List<int[]> batch = new ArrayList<>();
+            int[][] batch = new int[batchSize][3];
+            int i = 0;
 
             while (!wanted.isEmpty() && calculating) {
                 double[] pos = wanted.remove(0);
@@ -188,15 +190,15 @@ public class FractalView2 extends View {
                 int ypx = (int) Math.round((startImg - cImg) / rangeImg * bitmapHeight);
                 int color = iterations == precision ? Color.BLACK : resolveColor(iterations);
                 // TODO useColor ? resolveColor(iterations) : Color.WHITE;
-                batch.add(new int[]{xpx, ypx, color});
+                batch[i] = (new int[]{xpx, ypx, color});
 
-                if (batch.size() > 20 && calculating) {
-                    int[][] array = new int[batch.size()][3];
-                    for (int i = 0; i < batch.size(); i++) {
-                        array[i] = batch.get(i);
-                    }
-                    publishProgress(array);
-                    batch.clear();
+                if (!calculating) break;
+                if (i == batchSize - 1) {
+                    publishProgress(batch);
+                    batch = new int[batchSize][3];
+                    i = 0;
+                } else {
+                    i++;
                 }
             }
 
