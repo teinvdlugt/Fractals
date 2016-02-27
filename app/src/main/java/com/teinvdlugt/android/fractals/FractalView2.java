@@ -130,46 +130,8 @@ public class FractalView2 extends View {
         }
     }
 
-    private void zoom(double factor, double x, double y) {
-        if (factor == 1) {
-            move(x, y);
-            return;
-        }
-        rangeReal *= factor;
-        rangeImg *= factor;
+    private void zoom(double factor, double moveX, double moveY) {
 
-        // int xBmpPixels = (int) (x / rangeReal * bitmap.getWidth());
-        // int yBmpPixels = (int) (y / rangeImg * bitmap.getHeight());
-
-        int[] copy = Arrays.copyOf(bitmap, bitmap.length);
-
-        for (int xpx = 0; xpx < bitmapWidth; xpx++) {
-            for (int ypx = 0; ypx < bitmapHeight; ypx++) {
-                double origXDouble = xpx * factor;
-                double origYDouble = ypx * factor;
-                int origX = (int) origXDouble;
-                int origY = (int) origYDouble;
-                double origXLoss = (origXDouble - origX) / factor;
-                double origYLoss = (origYDouble - origY) / factor;
-
-                // TODO: 7-2-2016 Move according to xBmpPixels and yBmpPixels
-                int color;
-                if (origX < 0 || origY < 0 || origX >= bitmapWidth || origY >= bitmapHeight) {
-                    color = Color.BLACK;
-                    wanted.add(new double[]{
-                            startReal + (double) xpx / bitmapWidth * rangeReal,
-                            startImg - (double) ypx / bitmapHeight * rangeImg});
-                } else {
-                    if (origXLoss >= 1 || origYLoss >= 1) {
-                        wanted.add(new double[]{
-                                startReal + (double) xpx / bitmapWidth * rangeReal,
-                                startImg - (double) ypx / bitmapHeight * rangeImg});
-                    }
-                    color = copy[bitmapWidth * origY + origX];
-                }
-                bitmap[bitmapWidth * ypx + xpx] = color;
-            }
-        }
     }
 
     /**
@@ -305,6 +267,8 @@ public class FractalView2 extends View {
     private float prevXDrag2 = -1, prevYDrag2 = -1;
     private int pointerId1 = -1, pointerId2 = -1;
 
+    private boolean zoomed;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getActionMasked()) {
@@ -328,6 +292,7 @@ public class FractalView2 extends View {
                     prevXDrag1 = event.getX();
                     prevYDrag1 = event.getY();
                 } else {
+                    zoomed = true;
                     // Zoom and move
                     int indexCurrent = event.getActionIndex();
                     int index1 = event.findPointerIndex(pointerId1);
@@ -364,7 +329,46 @@ public class FractalView2 extends View {
                     double centerPointReal2 = startReal + centerPointX2 / getWidth() * rangeReal;
                     double centerPointImg2 = startImg + centerPointY2 / getHeight() * rangeImg;
 
-                    zoom(factor, centerPointReal2 - centerPointReal1, centerPointImg2 - centerPointImg1);
+                    if (factor == 1) {
+                        move(centerPointReal2 - centerPointReal1, centerPointImg2 - centerPointImg1);
+                        return true;
+                    }
+
+                    final double previousRangeReal = rangeReal;
+                    final double previousRangeImg = rangeImg;
+                    rangeReal *= factor;
+                    rangeImg *= factor;
+                    final double previousStartReal = startReal;
+                    final double previousStartImg = startImg;
+                    // The complex number (centerPointReal1, centerPointImg1) has to move to
+                    // pixel-position (centerPointX2, centerPointY2).
+                    startReal = centerPointReal1 - centerPointX2 / getWidth() * rangeReal;
+                    startImg = centerPointImg1 - centerPointY2 / getHeight() * rangeImg;
+
+                    int[] previousColors = Arrays.copyOf(bitmap, bitmap.length);
+
+                    for (int xpx = 0; xpx < bitmapWidth; xpx++) {
+                        for (int ypx = 0; ypx < bitmapHeight; ypx++) {
+                            double real = startReal + (double) xpx / bitmapWidth * rangeReal;
+                            double img = startImg - (double) ypx / bitmapHeight * rangeImg;
+
+                            int previousXpx = (int) Math.round((real - previousStartReal) / previousRangeReal * bitmapWidth);
+                            int previousYpx = (int) Math.round((previousStartImg - img) / previousRangeImg * bitmapHeight);
+
+                            /*double origXDouble = xpx * factor;// - moveX;
+                            double origYDouble = ypx * factor;// - moveY;
+                            int origX = (int) origXDouble;
+                            int origY = (int) origYDouble;*/
+
+                            int color;
+                            if (previousXpx < 0 || previousYpx < 0 || previousXpx >= bitmapWidth || previousYpx >= bitmapHeight) {
+                                color = Color.BLACK;
+                            } else {
+                                color = previousColors[bitmapWidth * previousYpx + previousXpx];
+                            }
+                            bitmap[bitmapWidth * ypx + xpx] = color;
+                        }
+                    }
                 }
 
                 invalidate();
@@ -372,8 +376,13 @@ public class FractalView2 extends View {
             case MotionEvent.ACTION_UP:
                 prevXDrag1 = prevXDrag2 = prevYDrag1 = prevYDrag2 =
                         pointerId2 = pointerId1 = -1;
-                calculateWanted();
-                return false;
+                if (zoomed) {
+                    startOver();
+                    zoomed = false;
+                } else {
+                    calculateWanted();
+                }
+                return true;
             case MotionEvent.ACTION_POINTER_UP:
                 int pointerIndex = event.getActionIndex();
                 if (pointerIndex == event.findPointerIndex(pointerId1)) {
