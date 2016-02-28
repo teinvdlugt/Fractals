@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.AsyncTask;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -267,7 +268,9 @@ public class FractalView2 extends View {
     private float prevXDrag2 = -1, prevYDrag2 = -1;
     private int pointerId1 = -1, pointerId2 = -1;
 
-    private boolean zoomed;
+    private int[] previousBitmap;
+    private double previousStartReal = -1, previousStartImg = -1;
+    private double previousRangeReal = -1, previousRangeImg = -1;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -276,112 +279,41 @@ public class FractalView2 extends View {
                 prevXDrag1 = event.getX();
                 prevYDrag1 = event.getY();
                 pointerId1 = event.getPointerId(0);
+                previousBitmap = Arrays.copyOf(bitmap, bitmap.length);
+                previousStartReal = startReal;
+                previousStartImg = startImg;
+                previousRangeReal = rangeReal;
+                previousRangeImg = rangeImg;
                 return true;
             case MotionEvent.ACTION_POINTER_DOWN:
                 if (pointerId2 != -1)
                     return false; // This was probably the third (or higher) pointer
+                // Prepare for zooming
                 pointerId2 = event.getPointerId(event.getActionIndex());
                 int index = event.getActionIndex();
                 prevXDrag2 = event.getX(index);
                 prevYDrag2 = event.getY(index);
             case MotionEvent.ACTION_MOVE:
                 if (event.getPointerCount() == 1) {
-                    // Move
-                    move((prevXDrag1 - event.getX()) / getWidth() * rangeReal,
-                            (prevYDrag1 - event.getY()) / getHeight() * rangeImg);
-                    prevXDrag1 = event.getX();
-                    prevYDrag1 = event.getY();
+                    if (!move(event)) return true;
                 } else {
-                    zoomed = true;
-                    // Zoom and move
-                    int indexCurrent = event.getActionIndex();
-                    int index1 = event.findPointerIndex(pointerId1);
-                    int index2 = event.findPointerIndex(pointerId2);
-                    if ((indexCurrent != index1 && indexCurrent != index2) || pointerId1 == -1 ||
-                            pointerId2 == -1 || prevXDrag1 == -1 || prevYDrag1 == -1 ||
-                            prevXDrag2 == -1 || prevYDrag2 == -1) {
-                        // This event is for a third (or higher) pointer,
-                        // or something went terribly wrong
-                        return false;
-                    }
-
-                    double xDist1 = prevXDrag2 - prevXDrag1;
-                    double yDist1 = prevYDrag2 - prevYDrag1;
-                    double dist1Sqr = xDist1 * xDist1 + yDist1 * yDist1;
-
-                    double centerPointX1 = (prevXDrag1 + prevXDrag2) / 2d;
-                    double centerPointY1 = (prevYDrag1 + prevYDrag2) / 2d;
-                    double centerPointReal1 = startReal + centerPointX1 / getWidth() * rangeReal;
-                    double centerPointImg1 = startImg + centerPointY1 / getHeight() * rangeImg;
-
-                    prevXDrag1 = event.getX(index1);
-                    prevYDrag1 = event.getY(index1);
-                    prevXDrag2 = event.getX(index2);
-                    prevYDrag2 = event.getY(index2);
-
-                    double xDist2 = prevXDrag2 - prevXDrag1;
-                    double yDist2 = prevYDrag2 - prevYDrag1;
-                    double dist2Sqr = xDist2 * xDist2 + yDist2 * yDist2;
-                    double factor = Math.sqrt(dist1Sqr / dist2Sqr);
-
-                    double centerPointX2 = (prevXDrag1 + prevXDrag2) / 2d;
-                    double centerPointY2 = (prevYDrag1 + prevYDrag2) / 2d;
-                    double centerPointReal2 = startReal + centerPointX2 / getWidth() * rangeReal;
-                    double centerPointImg2 = startImg + centerPointY2 / getHeight() * rangeImg;
-
-                    if (factor == 1) {
-                        move(centerPointReal2 - centerPointReal1, centerPointImg2 - centerPointImg1);
-                        return true;
-                    }
-
-                    final double previousRangeReal = rangeReal;
-                    final double previousRangeImg = rangeImg;
-                    rangeReal *= factor;
-                    rangeImg *= factor;
-                    final double previousStartReal = startReal;
-                    final double previousStartImg = startImg;
-                    // The complex number (centerPointReal1, centerPointImg1) has to move to
-                    // pixel-position (centerPointX2, centerPointY2).
-                    startReal = centerPointReal1 - centerPointX2 / getWidth() * rangeReal;
-                    startImg = centerPointImg1 - centerPointY2 / getHeight() * rangeImg;
-
-                    int[] previousColors = Arrays.copyOf(bitmap, bitmap.length);
-
-                    for (int xpx = 0; xpx < bitmapWidth; xpx++) {
-                        for (int ypx = 0; ypx < bitmapHeight; ypx++) {
-                            double real = startReal + (double) xpx / bitmapWidth * rangeReal;
-                            double img = startImg - (double) ypx / bitmapHeight * rangeImg;
-
-                            int previousXpx = (int) Math.round((real - previousStartReal) / previousRangeReal * bitmapWidth);
-                            int previousYpx = (int) Math.round((previousStartImg - img) / previousRangeImg * bitmapHeight);
-
-                            /*double origXDouble = xpx * factor;// - moveX;
-                            double origYDouble = ypx * factor;// - moveY;
-                            int origX = (int) origXDouble;
-                            int origY = (int) origYDouble;*/
-
-                            int color;
-                            if (previousXpx < 0 || previousYpx < 0 || previousXpx >= bitmapWidth || previousYpx >= bitmapHeight) {
-                                color = Color.BLACK;
-                            } else {
-                                color = previousColors[bitmapWidth * previousYpx + previousXpx];
-                            }
-                            bitmap[bitmapWidth * ypx + xpx] = color;
-                        }
-                    }
+                    if (!zoom(event)) return true;
                 }
 
+                reconstructFromPrevious();
                 invalidate();
                 return true;
             case MotionEvent.ACTION_UP:
-                prevXDrag1 = prevXDrag2 = prevYDrag1 = prevYDrag2 =
-                        pointerId2 = pointerId1 = -1;
-                if (zoomed) {
+                if (previousRangeReal != rangeReal) {
                     startOver();
-                    zoomed = false;
                 } else {
                     calculateWanted();
                 }
+                prevXDrag1 = prevXDrag2 = prevYDrag1 = prevYDrag2 =
+                        pointerId2 = pointerId1 = -1;
+                previousRangeReal = previousRangeImg = previousStartReal =
+                        previousStartImg = -1;
+                previousBitmap = null; // TODO keep value and make back key restore the previousBitmap
                 return true;
             case MotionEvent.ACTION_POINTER_UP:
                 int pointerIndex = event.getActionIndex();
@@ -401,6 +333,89 @@ public class FractalView2 extends View {
                 return true;
             default:
                 return false;
+        }
+    }
+
+    private boolean zoom(MotionEvent event) {
+        int indexCurrent = event.getActionIndex();
+        int index1 = event.findPointerIndex(pointerId1);
+        int index2 = event.findPointerIndex(pointerId2);
+        if ((indexCurrent != index1 && indexCurrent != index2) || pointerId1 == -1 ||
+                pointerId2 == -1 || prevXDrag1 == -1 || prevYDrag1 == -1 ||
+                prevXDrag2 == -1 || prevYDrag2 == -1) {
+            // This event is for a third (or higher) pointer,
+            // or something went terribly wrong
+            return false;
+        }
+
+        double xDist1 = prevXDrag2 - prevXDrag1;
+        double yDist1 = prevYDrag2 - prevYDrag1;
+        double dist1Sqr = xDist1 * xDist1 + yDist1 * yDist1;
+
+        double centerPointX1 = (prevXDrag1 + prevXDrag2) / 2d;
+        double centerPointY1 = (prevYDrag1 + prevYDrag2) / 2d;
+        double centerPointReal1 = startReal + centerPointX1 / getWidth() * rangeReal;
+        double centerPointImg1 = startImg - centerPointY1 / getHeight() * rangeImg;
+
+        prevXDrag1 = event.getX(index1);
+        prevYDrag1 = event.getY(index1);
+        prevXDrag2 = event.getX(index2);
+        prevYDrag2 = event.getY(index2);
+
+        double xDist2 = prevXDrag2 - prevXDrag1;
+        double yDist2 = prevYDrag2 - prevYDrag1;
+        double dist2Sqr = xDist2 * xDist2 + yDist2 * yDist2;
+        double factor = Math.sqrt(dist1Sqr / dist2Sqr);
+
+        double centerPointX2 = (prevXDrag1 + prevXDrag2) / 2d;
+        double centerPointY2 = (prevYDrag1 + prevYDrag2) / 2d;
+        double centerPointReal2 = startReal + centerPointX2 / getWidth() * rangeReal;
+        double centerPointImg2 = startImg + centerPointY2 / getHeight() * rangeImg;
+
+        if (factor == 1) {
+            // TODO move();
+            return false;
+        }
+
+        rangeReal *= factor;
+        rangeImg *= factor;
+        // The complex number (centerPointReal1, centerPointImg1) has to move to
+        // pixel-position (centerPointX2, centerPointY2).
+        startReal = centerPointReal1 - centerPointX2 / getWidth() * rangeReal;
+        startImg = centerPointImg1 + centerPointY2 / getHeight() * rangeImg;
+        return true;
+    }
+
+    private boolean move(MotionEvent event) {
+        double moveReal = (prevXDrag1 - event.getX()) / getWidth() * rangeReal;
+        double moveImg = (event.getY() - prevYDrag1) / getHeight() * rangeImg;
+        if (moveReal == 0 && moveImg == 0) return false;
+        startReal += moveReal;
+        startImg += moveImg;
+        prevXDrag1 = event.getX();
+        prevYDrag1 = event.getY();
+        return true;
+    }
+
+    private void reconstructFromPrevious() {
+        wanted.clear();
+        for (int xpx = 0; xpx < bitmapWidth; xpx++) {
+            for (int ypx = 0; ypx < bitmapHeight; ypx++) {
+                double real = startReal + (double) xpx / bitmapWidth * rangeReal;
+                double img = startImg - (double) ypx / bitmapHeight * rangeImg;
+
+                int previousXpx = (int) Math.round((real - previousStartReal) / previousRangeReal * bitmapWidth);
+                int previousYpx = (int) Math.round((previousStartImg - img) / previousRangeImg * bitmapHeight);
+
+                int color;
+                if (previousXpx < 0 || previousYpx < 0 || previousXpx >= bitmapWidth || previousYpx >= bitmapHeight) {
+                    color = Color.BLACK;
+                    wanted.add(new double[]{real, img}); // TODO don't when zooming? Because redundant
+                } else {
+                    color = previousBitmap[bitmapWidth * previousYpx + previousXpx];
+                }
+                bitmap[bitmapWidth * ypx + xpx] = color;
+            }
         }
     }
 
