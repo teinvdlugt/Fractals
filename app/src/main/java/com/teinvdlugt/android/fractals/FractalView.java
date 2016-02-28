@@ -9,11 +9,10 @@ import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
 
 import java.util.Arrays;
 
-public class FractalView extends View {
+public class FractalView extends AbstractFractalView {
 
     public static final int MANDELBROT_SET = 0;
     public static final int TRICORN = 1;
@@ -554,19 +553,19 @@ public class FractalView extends View {
         this.updateRows = updateRows;
     }
 
-    public int getCurrentFractal() {
+    public int getFractal() {
         return currentFractal;
     }
 
-    public void setCurrentFractal(int currentFractal) {
-        this.currentFractal = currentFractal;
+    public void setFractal(int fractal) {
+        this.currentFractal = fractal;
     }
 
     public void setUseColor(boolean useColor) {
         this.useColor = useColor;
     }
 
-    public boolean isUseColor() {
+    public boolean getUseColor() {
         return useColor;
     }
 
@@ -584,6 +583,27 @@ public class FractalView extends View {
 
     public void setColorDistribution(double colorDistribution) {
         this.colorDistribution = colorDistribution;
+    }
+
+    @Override
+    public String[] getAvailableFractals() {
+        return new String[]
+                {"Mandelbrot set", "Tricorn", "Burning ship", "Multibrot set (3)", "Multibrot set (4)"};
+    }
+
+    @Override
+    public void onClickApply() {
+        recalculate();
+    }
+
+    @Override
+    public void onClickRestoreZoom() {
+        restoreZoom();
+    }
+
+    @Override
+    public void onClickCancel() {
+        cancel();
     }
 
     public FractalView(Context context) {

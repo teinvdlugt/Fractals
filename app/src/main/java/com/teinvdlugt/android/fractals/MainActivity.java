@@ -17,7 +17,7 @@ import android.widget.Spinner;
 
 public class MainActivity extends AppCompatActivity {
 
-    private FractalView2 fractalView;
+    private AbstractFractalView fractalView;
     private EditText resolutionET, precisionET, escapeValueET, maxColorIterationsET, colorDistributionET;
     private DrawerLayout drawerLayout;
     private CheckBox colorCB;
@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setSpinnerAdapter() {
-        String[] strings = {"Mandelbrot set", "Tricorn", "Burning ship", "Multibrot set (3)", "Multibrot set (4)"};
+        String[] strings = fractalView.getAvailableFractals();
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, strings);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         fractalSpinner.setAdapter(adapter);
@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setCheckBox() {
-        colorCB.setChecked(fractalView.isUseColor());
+        colorCB.setChecked(fractalView.getUseColor());
         colorCB.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -140,9 +140,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickApply(View view) {
-        drawerLayout.closeDrawer(GravityCompat.START);
-        fractalView.startOver();
         applyValues();
+        drawerLayout.closeDrawer(GravityCompat.START);
+        fractalView.onClickApply();
     }
 
     public void applyValues() {
@@ -170,12 +170,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickRestoreZoom(View view) {
         applyValues();
-        fractalView.restoreZoom();
+        fractalView.onClickRestoreZoom();
         drawerLayout.closeDrawer(GravityCompat.START);
     }
 
     public void onClickCancel(View view) {
-        fractalView.cancel();
+        fractalView.onClickCancel();
     }
 
     public void onClickSettings(View view) {

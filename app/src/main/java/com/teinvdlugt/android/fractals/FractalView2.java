@@ -7,16 +7,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.AsyncTask;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class FractalView2 extends View {
+public class FractalView2 extends AbstractFractalView {
     public static final int MANDELBROT_SET = 0;
     public static final int TRICORN = 1;
     public static final int BURNING_SHIP = 2;
@@ -26,7 +24,7 @@ public class FractalView2 extends View {
     private int[] bitmap;
     private int bitmapWidth, bitmapHeight;
     private List<double[]> wanted = new ArrayList<>();
-    private Paint paint;
+    private Paint paint = new Paint();
     private boolean calculating = false;
     private CalculatingTask calculatingTask;
     private int fractal = MANDELBROT_SET;
@@ -87,52 +85,6 @@ public class FractalView2 extends View {
             }
         }
         calculateWanted();
-    }
-
-    /*private double spareX = 0;
-    private double spareY = 0;*/
-
-    private void move(double x, double y) {
-        if (x == 0 && y == 0) return;
-        startReal += x;
-        startImg -= y;
-
-        double xBmpPixelsDouble = x / rangeReal * bitmapWidth;
-        double yBmpPixelsDouble = y / rangeImg * bitmapHeight;
-        int xBmpPixels = (int) Math.round(xBmpPixelsDouble);
-        int yBmpPixels = (int) Math.round(yBmpPixelsDouble);
-        /*spareX += xBmpPixelsDouble - xBmpPixels;
-        spareY += yBmpPixelsDouble - yBmpPixels;
-        int takeFromSpareX = (int) spareX;
-        int takeFromSpareY = (int) spareY;
-        spareX -= takeFromSpareX;
-        spareY -= takeFromSpareY;
-        xBmpPixels += takeFromSpareX;
-        yBmpPixels += takeFromSpareY;*/
-
-        int[] copy = Arrays.copyOf(bitmap, bitmap.length);
-
-        for (int xpx = 0; xpx < bitmapWidth; xpx++) {
-            for (int ypx = 0; ypx < bitmapHeight; ypx++) {
-                int origX = xpx + xBmpPixels;
-                int origY = ypx + yBmpPixels;
-                int color;
-                if (origX < 0 || origY < 0 || origX >= bitmapWidth || origY >= bitmapHeight) {
-                    color = Color.BLACK;
-                    double img = startImg - (double) ypx / bitmapHeight * rangeImg;
-                    wanted.add(new double[]{
-                            startReal + (double) xpx / bitmapWidth * rangeReal,
-                            img});
-                } else {
-                    color = copy[bitmapWidth * origY + origX];
-                }
-                bitmap[bitmapWidth * ypx + xpx] = color;
-            }
-        }
-    }
-
-    private void zoom(double factor, double moveX, double moveY) {
-
     }
 
     /**
@@ -441,6 +393,14 @@ public class FractalView2 extends View {
         this.colorDistribution = colorDistribution;
     }
 
+    public boolean getUseColor() {
+        return useColor;
+    }
+
+    public void setUseColor(boolean useColor) {
+        this.useColor = useColor;
+    }
+
     public double getMaxColorIterations() {
         return maxColorIterations;
     }
@@ -469,21 +429,43 @@ public class FractalView2 extends View {
         return fractal;
     }
 
+    @Override
+    public void onClickApply() {
+        startOver();
+    }
+
+    @Override
+    public void onClickRestoreZoom() {
+        restoreZoom();
+    }
+
+    @Override
+    public void onClickCancel() {
+        cancel();
+    }
+
     public void setFractal(int fractal) {
         this.fractal = fractal;
     }
 
-    public boolean isUseColor() {
-        return useColor;
+    @Override
+    public String[] getAvailableFractals() {
+        return new String[]
+                {"Mandelbrot set", "Tricorn", "Burning ship", "Multibrot set (3)", "Multibrot set (4)"};
     }
 
-    public void setUseColor(boolean useColor) {
-        this.useColor = useColor;
+    @Override
+    public int getResolution() {
+        return bitmapWidth;
+    }
+
+    @Override
+    public void setResolution(int resolution) {
+        // TODO: 28-2-2016 !!
     }
 
     public FractalView2(Context context) {
         super(context);
-        paint = new Paint();
     }
 
     public FractalView2(Context context, AttributeSet attrs) {
