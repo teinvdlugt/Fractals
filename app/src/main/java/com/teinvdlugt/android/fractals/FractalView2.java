@@ -21,26 +21,34 @@ public class FractalView2 extends AbstractFractalView {
     public static final int MULTIBROT_3 = 3;
     public static final int MULTIBROT_4 = 4;
 
-    private int[] bitmap;
+    public static final int COLOR_UNCALCULATED = Color.CYAN - 1;
+
     private int bitmapWidth, bitmapHeight;
-    private List<double[]> wanted = new ArrayList<>();
     private Paint paint = new Paint();
     private boolean calculating = false;
     private CalculatingTask calculatingTask;
-    private int fractal = MANDELBROT_SET;
-    private boolean useColor = true;
 
-    private double startReal = -2, startImg = 2, rangeReal = 4, rangeImg = 4, escapeValue = 2;
+    private int[] newBitmap;
+    private List<double[]> newWanted = new ArrayList<>();
+    private double newStartReal = -2, newStartImg = 2, newRangeReal = 4, newRangeImg = 4;
+    private int[] bitmap;
+    private double startReal = -1, startImg = -1;
+    private double rangeReal = -1, rangeImg = -1;
+    private List<double[]> wanted = new ArrayList<>();
+    private double escapeValue = 2;
+
     private int precision = 100;
     private double maxColorIterations = 400;
     private double colorDistribution = 30;
+    private int fractal = MANDELBROT_SET;
+    private boolean useColor = true;
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
         canvas.drawBitmap(Bitmap.createScaledBitmap(
-                Bitmap.createBitmap(bitmap, bitmapWidth, bitmapHeight, Bitmap.Config.RGB_565),
+                Bitmap.createBitmap(newBitmap, bitmapWidth, bitmapHeight, Bitmap.Config.RGB_565),
                 getWidth(), getHeight(), false), 0, 0, paint);
     }
 
@@ -51,7 +59,7 @@ public class FractalView2 extends AbstractFractalView {
 
         if (oldw == 0 && oldh == 0) {
             // Pretend to be coming from a square, because standard values
-            // (startReal -2, rangeReal 4, startImg 2, rangeImg 4) 'presume'
+            // (newStartReal -2, newRangeReal 4, newStartImg 2, newRangeImg 4) 'presume'
             // a square layout
             oldw = oldh = Math.min(w, h);
         }
@@ -61,27 +69,28 @@ public class FractalView2 extends AbstractFractalView {
     }
 
     private void applyDimensions(int w, int h, int oldw, int oldh) {
-        double rangeRealDiff = (w - oldw) / (double) oldw * rangeReal;
-        double rangeImgDiff = (h - oldh) / (double) oldh * rangeImg;
-        startReal = startReal - rangeRealDiff / 2.0;
-        startImg = startImg + rangeImgDiff / 2.0;
-        rangeReal = rangeReal + rangeRealDiff;
-        rangeImg = rangeImg + rangeImgDiff;
+        double rangeRealDiff = (w - oldw) / (double) oldw * newRangeReal;
+        double rangeImgDiff = (h - oldh) / (double) oldh * newRangeImg;
+        startReal = newStartReal = newStartReal - rangeRealDiff / 2.0;
+        startImg = newStartImg = newStartImg + rangeImgDiff / 2.0;
+        rangeReal = newRangeReal = newRangeReal + rangeRealDiff;
+        rangeImg = newRangeImg = newRangeImg + rangeImgDiff;
         bitmapWidth = w / 8;
         bitmapHeight = h / 8;
-        bitmap = new int[bitmapWidth * bitmapHeight];
+        bitmap = newBitmap = new int[bitmapWidth * bitmapHeight];
         /*widthResolution = (int) ((double) w / oldw * widthResolution);
         heightResolution = (int) ((double) h / oldh * heightResolution);*/
     }
 
     public void startOver() {
         wanted.clear();
-        double yFactor = rangeImg / bitmapHeight;
-        double xFactor = rangeReal / bitmapWidth;
+        newWanted.clear();
+        double yFactor = newRangeImg / bitmapHeight;
+        double xFactor = newRangeReal / bitmapWidth;
         for (int y = 0; y < bitmapHeight; y++) {
             for (int x = 0; x < bitmapWidth; x++) {
-                wanted.add(new double[]{startReal + x * xFactor,
-                        startImg - y * yFactor});
+                wanted.add(new double[]{newStartReal + x * xFactor,
+                        newStartImg - y * yFactor});
             }
         }
         calculateWanted();
@@ -112,7 +121,8 @@ public class FractalView2 extends AbstractFractalView {
                 final double cImg = pos[1];
                 double zReal = 0, zImg = 0;
 
-                if (cImg < startImg - rangeImg || cImg > startImg || cReal > rangeImg + startImg || cReal < startReal) {
+                if (cImg < startImg - rangeImg || cImg > startImg // TODO or newStartImg?
+                        || cReal > rangeImg + startImg || cReal < startReal) {
                     // Complex number is off-screen, so there's no use calculating its value
                     continue;
                 }
@@ -220,10 +230,6 @@ public class FractalView2 extends AbstractFractalView {
     private float prevXDrag2 = -1, prevYDrag2 = -1;
     private int pointerId1 = -1, pointerId2 = -1;
 
-    private int[] previousBitmap;
-    private double previousStartReal = -1, previousStartImg = -1;
-    private double previousRangeReal = -1, previousRangeImg = -1;
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getActionMasked()) {
@@ -231,11 +237,11 @@ public class FractalView2 extends AbstractFractalView {
                 prevXDrag1 = event.getX();
                 prevYDrag1 = event.getY();
                 pointerId1 = event.getPointerId(0);
-                previousBitmap = Arrays.copyOf(bitmap, bitmap.length);
-                previousStartReal = startReal;
-                previousStartImg = startImg;
-                previousRangeReal = rangeReal;
-                previousRangeImg = rangeImg;
+                newBitmap = Arrays.copyOf(bitmap, bitmap.length);
+                /*newStartReal = startReal;
+                newStartImg = startImg;
+                newRangeReal = rangeReal;
+                newRangeImg = rangeImg;*/
                 return true;
             case MotionEvent.ACTION_POINTER_DOWN:
                 if (pointerId2 != -1)
@@ -256,16 +262,22 @@ public class FractalView2 extends AbstractFractalView {
                 invalidate();
                 return true;
             case MotionEvent.ACTION_UP:
-                if (previousRangeReal != rangeReal) {
+                if (rangeReal != newRangeReal) {
                     startOver();
                 } else {
+                    wanted.clear();
+                    for (double[] i : newWanted) {
+                        wanted.add(new double[]{i[0], i[1]});
+                    }
                     calculateWanted();
                 }
+                rangeReal = newRangeReal;
+                rangeImg = newRangeImg;
+                startReal = newStartReal;
+                startImg = newStartImg;
+                bitmap = newBitmap;
                 prevXDrag1 = prevXDrag2 = prevYDrag1 = prevYDrag2 =
                         pointerId2 = pointerId1 = -1;
-                previousRangeReal = previousRangeImg = previousStartReal =
-                        previousStartImg = -1;
-                previousBitmap = null; // TODO keep value and make back key restore the previousBitmap
                 return true;
             case MotionEvent.ACTION_POINTER_UP:
                 int pointerIndex = event.getActionIndex();
@@ -306,8 +318,8 @@ public class FractalView2 extends AbstractFractalView {
 
         double centerPointX1 = (prevXDrag1 + prevXDrag2) / 2d;
         double centerPointY1 = (prevYDrag1 + prevYDrag2) / 2d;
-        double centerPointReal1 = startReal + centerPointX1 / getWidth() * rangeReal;
-        double centerPointImg1 = startImg - centerPointY1 / getHeight() * rangeImg;
+        double centerPointReal1 = newStartReal + centerPointX1 / getWidth() * newRangeReal;
+        double centerPointImg1 = newStartImg - centerPointY1 / getHeight() * newRangeImg;
 
         prevXDrag1 = event.getX(index1);
         prevYDrag1 = event.getY(index1);
@@ -321,52 +333,55 @@ public class FractalView2 extends AbstractFractalView {
 
         double centerPointX2 = (prevXDrag1 + prevXDrag2) / 2d;
         double centerPointY2 = (prevYDrag1 + prevYDrag2) / 2d;
-        double centerPointReal2 = startReal + centerPointX2 / getWidth() * rangeReal;
-        double centerPointImg2 = startImg + centerPointY2 / getHeight() * rangeImg;
+        double centerPointReal2 = newStartReal + centerPointX2 / getWidth() * newRangeReal;
+        double centerPointImg2 = newStartImg + centerPointY2 / getHeight() * newRangeImg;
 
         if (factor == 1) {
             // TODO move();
             return false;
         }
 
-        rangeReal *= factor;
-        rangeImg *= factor;
+        newRangeReal *= factor;
+        newRangeImg *= factor;
         // The complex number (centerPointReal1, centerPointImg1) has to move to
         // pixel-position (centerPointX2, centerPointY2).
-        startReal = centerPointReal1 - centerPointX2 / getWidth() * rangeReal;
-        startImg = centerPointImg1 + centerPointY2 / getHeight() * rangeImg;
+        newStartReal = centerPointReal1 - centerPointX2 / getWidth() * newRangeReal;
+        newStartImg = centerPointImg1 + centerPointY2 / getHeight() * newRangeImg;
         return true;
     }
 
     private boolean move(MotionEvent event) {
-        double moveReal = (prevXDrag1 - event.getX()) / getWidth() * rangeReal;
-        double moveImg = (event.getY() - prevYDrag1) / getHeight() * rangeImg;
+        double moveReal = (prevXDrag1 - event.getX()) / getWidth() * newRangeReal;
+        double moveImg = (event.getY() - prevYDrag1) / getHeight() * newRangeImg;
         if (moveReal == 0 && moveImg == 0) return false;
-        startReal += moveReal;
-        startImg += moveImg;
+        newStartReal += moveReal;
+        newStartImg += moveImg;
         prevXDrag1 = event.getX();
         prevYDrag1 = event.getY();
         return true;
     }
 
     private void reconstructFromPrevious() {
-        wanted.clear();
+        newWanted.clear();
         for (int xpx = 0; xpx < bitmapWidth; xpx++) {
             for (int ypx = 0; ypx < bitmapHeight; ypx++) {
-                double real = startReal + (double) xpx / bitmapWidth * rangeReal;
-                double img = startImg - (double) ypx / bitmapHeight * rangeImg;
+                double real = newStartReal + (double) xpx / bitmapWidth * newRangeReal;
+                double img = newStartImg - (double) ypx / bitmapHeight * newRangeImg;
 
-                int previousXpx = (int) Math.round((real - previousStartReal) / previousRangeReal * bitmapWidth);
-                int previousYpx = (int) Math.round((previousStartImg - img) / previousRangeImg * bitmapHeight);
+                int previousXpx = (int) Math.round((real - startReal) / rangeReal * bitmapWidth);
+                int previousYpx = (int) Math.round((startImg - img) / rangeImg * bitmapHeight);
 
                 int color;
                 if (previousXpx < 0 || previousYpx < 0 || previousXpx >= bitmapWidth || previousYpx >= bitmapHeight) {
-                    color = Color.BLACK;
-                    wanted.add(new double[]{real, img}); // TODO don't when zooming? Because redundant
+                    color = COLOR_UNCALCULATED;
+                    newWanted.add(new double[]{real, img}); // TODO don't when zooming? Because redundant
                 } else {
-                    color = previousBitmap[bitmapWidth * previousYpx + previousXpx];
+                    color = bitmap[bitmapWidth * previousYpx + previousXpx];
+                    if (color == COLOR_UNCALCULATED) {
+                        newWanted.add(new double[]{real, img});
+                    }
                 }
-                bitmap[bitmapWidth * ypx + xpx] = color;
+                newBitmap[bitmapWidth * ypx + xpx] = color;
             }
         }
     }
@@ -376,9 +391,11 @@ public class FractalView2 extends AbstractFractalView {
     }
 
     public void restoreZoom() {
-        startReal = -2;
-        rangeReal = rangeImg = 4;
-        startImg = 2;
+        cancel();
+
+        startReal = newStartReal = -2;
+        startReal = newRangeReal = newRangeImg = 4;
+        startReal = newStartImg = 2;
 
         int oldSizes = Math.min(getWidth(), getHeight());
         applyDimensions(getWidth(), getHeight(), oldSizes, oldSizes);
