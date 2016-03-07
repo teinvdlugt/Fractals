@@ -12,4 +12,5 @@
     <string name="use_color">Use color</string>
     <string name="max_color_iterations">Max color iterations</string>
     <string name="color_distribution">Color distribution</string>
+    <string name="use_new_view">Use new view</string>
 </resources>

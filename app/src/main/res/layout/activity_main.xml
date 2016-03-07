@@ -9,10 +9,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.teinvdlugt.android.fractals.FractalView2
-            android:id="@+id/fractalView"
+        <FrameLayout
+            android:id="@+id/fractalView_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <!--<com.teinvdlugt.android.fractals.FractalView2
+            android:id="@+id/fractalView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />-->
 
         <ImageButton
             android:id="@+id/settingsButton"
@@ -38,7 +43,6 @@
             android:src="@mipmap/ic_cancel_black_24dp" />
     </RelativeLayout>
 
-
     <ScrollView
         android:id="@+id/drawer"
         android:layout_width="280dp"
@@ -52,15 +56,36 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:onClick="onClickSwitchLayout"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/use_new_view" />
+
+                <android.support.v7.widget.SwitchCompat
+                    android:id="@+id/useNewView_switch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
             <android.support.design.widget.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
                 <EditText
-                    android:hint="@string/resolution_in_px"
                     android:id="@+id/resolution"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:hint="@string/resolution_in_px"
                     android:inputType="number" />
             </android.support.design.widget.TextInputLayout>
 
@@ -69,10 +94,10 @@
                 android:layout_height="wrap_content">
 
                 <EditText
-                    android:hint="@string/precision"
                     android:id="@+id/precision"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:hint="@string/precision"
                     android:inputType="number" />
             </android.support.design.widget.TextInputLayout>
 
@@ -81,10 +106,10 @@
                 android:layout_height="wrap_content">
 
                 <EditText
-                    android:hint="@string/escape_value"
                     android:id="@+id/escapeValue"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:hint="@string/escape_value"
                     android:inputType="numberDecimal" />
             </android.support.design.widget.TextInputLayout>
 

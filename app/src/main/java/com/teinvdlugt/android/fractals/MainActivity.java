@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SwitchCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -13,15 +14,18 @@ import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.Spinner;
 
 public class MainActivity extends AppCompatActivity {
 
     private AbstractFractalView fractalView;
+    private FrameLayout fractalViewContainer;
     private EditText resolutionET, precisionET, escapeValueET, maxColorIterationsET, colorDistributionET;
     private DrawerLayout drawerLayout;
     private CheckBox colorCB;
     private Spinner fractalSpinner;
+    private SwitchCompat useNewViewSwitch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +33,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         initViews();
+
+        onSwitchChanged(false);
 
         // resolutionET.setText(fractalView.getResolution() + "");
         precisionET.setText(fractalView.getPrecision() + "");
@@ -39,11 +45,13 @@ public class MainActivity extends AppCompatActivity {
         setSpinnerAdapter();
         setCheckBox();
         setTextWatchers();
+        setSwitchListener();
     }
 
     private void initViews() {
         drawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
-        fractalView = (FractalView2) findViewById(R.id.fractalView);
+        //fractalView = (FractalView2) findViewById(R.id.fractalView);
+        fractalViewContainer = (FrameLayout) findViewById(R.id.fractalView_container);
         resolutionET = (EditText) findViewById(R.id.resolution);
         precisionET = (EditText) findViewById(R.id.precision);
         escapeValueET = (EditText) findViewById(R.id.escapeValue);
@@ -51,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
         fractalSpinner = (Spinner) findViewById(R.id.fractalSpinner);
         maxColorIterationsET = (EditText) findViewById(R.id.maxColorIterations_editText);
         colorDistributionET = (EditText) findViewById(R.id.colorDistribution_editText);
+        useNewViewSwitch = (SwitchCompat) findViewById(R.id.useNewView_switch);
     }
 
     private void setSpinnerAdapter() {
@@ -139,6 +148,32 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void setSwitchListener() {
+        useNewViewSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                onSwitchChanged(isChecked);
+            }
+        });
+    }
+
+    private void onSwitchChanged(boolean isChecked) {
+        if (fractalView != null) fractalView.onClickCancel();
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+        if (isChecked) {
+            fractalView = new FractalView2(MainActivity.this);
+        } else {
+            fractalView = new FractalView(MainActivity.this);
+        }
+        fractalViewContainer.removeAllViews();
+        fractalViewContainer.addView(fractalView, params);
+    }
+
+    public void onClickSwitchLayout(View view) {
+        useNewViewSwitch.performClick();
+    }
+
     public void onClickApply(View view) {
         applyValues();
         drawerLayout.closeDrawer(GravityCompat.START);
@@ -186,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus && Build.VERSION.SDK_INT >= 19) {
-            fractalView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            drawerLayout.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
