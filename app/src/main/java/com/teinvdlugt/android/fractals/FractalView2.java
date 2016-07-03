@@ -473,7 +473,7 @@ public class FractalView2 extends AbstractFractalView {
 
     @Override
     public int getResolution() {
-        return bitmapWidth;
+        throw new UnsupportedOperationException("FractalView2 doesn't support custom resolution yet");
     }
 
     @Override

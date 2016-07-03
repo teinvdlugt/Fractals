@@ -1,7 +1,9 @@
 package com.teinvdlugt.android.fractals;
 
+import android.annotation.SuppressLint;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -19,6 +21,7 @@ import android.widget.FrameLayout;
 import android.widget.Spinner;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String USE_NEW_VIEW_PREF = "use_new_view";
 
     private AbstractFractalView fractalView;
     private FrameLayout fractalViewContainer;
@@ -36,18 +39,10 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
         makeTabletLayout();
-
-        onSwitchChanged(false);
-
-        // resolutionET.setText(fractalView.getResolution() + "");
-        precisionET.setText(fractalView.getPrecision() + "");
-        escapeValueET.setText(fractalView.getEscapeValue() + "");
-        maxColorIterationsET.setText(fractalView.getMaxColorIterations() + "");
-        colorDistributionET.setText(fractalView.getColorDistribution() + "");
-
+        setUseNewView();
+        setEditTextTexts();
         setSpinnerAdapter();
         setCheckBox();
-        setTextWatchers();
         setSwitchListener();
     }
 
@@ -82,6 +77,35 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void setUseNewView() {
+        boolean useNewView = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(USE_NEW_VIEW_PREF, false);
+        useNewViewSwitch.setChecked(useNewView);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+        if (useNewView) {
+            fractalView = new FractalView2(MainActivity.this);
+        } else {
+            fractalView = new FractalView(MainActivity.this);
+        }
+        fractalViewContainer.removeAllViews();
+        fractalViewContainer.addView(fractalView, params);
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void setEditTextTexts() {
+        precisionET.setText(fractalView.getPrecision() + "");
+        escapeValueET.setText(fractalView.getEscapeValue() + "");
+        maxColorIterationsET.setText(fractalView.getMaxColorIterations() + "");
+        colorDistributionET.setText(fractalView.getColorDistribution() + "");
+
+        try {
+            resolutionET.setText(fractalView.getResolution() + "");
+        } catch (UnsupportedOperationException e) {
+            resolutionET.setText(getString(R.string.feature_not_yet_available));
+            resolutionET.setEnabled(false);
+        }
+    }
+
     private void setSpinnerAdapter() {
         String[] strings = fractalView.getAvailableFractals();
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, strings);
@@ -110,64 +134,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void setTextWatchers() {
-        /*resolutionET.addTextChangedListener(new TextWatcher() {
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                try {
-                    fractalView.setResolution(Integer.parseInt(resolutionET.getText().toString()));
-                } catch (NumberFormatException ignored) {*//*ignored*//*}
-            }
-
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {*//*ignored*//*}
-
-            public void afterTextChanged(Editable s) {*//*ignored*//*}
-        });*/
-        precisionET.addTextChangedListener(new TextWatcher() {
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                try {
-                    fractalView.setPrecision(Integer.parseInt(precisionET.getText().toString()));
-                } catch (NumberFormatException ignored) {}
-            }
-
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            public void afterTextChanged(Editable s) {}
-        });
-        escapeValueET.addTextChangedListener(new TextWatcher() {
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                try {
-                    fractalView.setEscapeValue(Double.parseDouble(escapeValueET.getText().toString()));
-                } catch (NumberFormatException ignored) {}
-            }
-
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            public void afterTextChanged(Editable s) {}
-        });
-        maxColorIterationsET.addTextChangedListener(new TextWatcher() {
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                try {
-                    fractalView.setMaxColorIterations(Double.parseDouble(maxColorIterationsET.getText().toString()));
-                } catch (NumberFormatException ignored) {}
-            }
-
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            public void afterTextChanged(Editable s) {}
-        });
-        colorDistributionET.addTextChangedListener(new TextWatcher() {
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                try {
-                    fractalView.setColorDistribution(Double.parseDouble(colorDistributionET.getText().toString()));
-                } catch (NumberFormatException ignored) {}
-            }
-
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            public void afterTextChanged(Editable s) {}
-        });
-    }
-
     private void setSwitchListener() {
         useNewViewSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -179,15 +145,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void onSwitchChanged(boolean isChecked) {
         if (fractalView != null) fractalView.onClickCancel();
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
-        if (isChecked) {
-            fractalView = new FractalView2(MainActivity.this);
-        } else {
-            fractalView = new FractalView(MainActivity.this);
-        }
-        fractalViewContainer.removeAllViews();
-        fractalViewContainer.addView(fractalView, params);
+        PreferenceManager.getDefaultSharedPreferences(this).edit()
+                .putBoolean(USE_NEW_VIEW_PREF, isChecked).apply();
+        recreate();
     }
 
     public void onClickApply(View view) {
@@ -209,10 +169,10 @@ public class MainActivity extends AppCompatActivity {
             double maxColorIterations = Double.parseDouble(maxColorIterationsET.getText().toString());
             fractalView.setMaxColorIterations(maxColorIterations);
         } catch (NumberFormatException ignored) {}
-        /*try {
+        try {
             int resolution = Integer.parseInt(resolutionET.getText().toString());
             fractalView.setResolution(resolution);
-        } catch (NumberFormatException ignored) {*//*ignored*//*}*/
+        } catch (NumberFormatException ignored) {}
         try {
             double colorDistribution = Double.parseDouble(colorDistributionET.getText().toString());
             fractalView.setColorDistribution(colorDistribution);

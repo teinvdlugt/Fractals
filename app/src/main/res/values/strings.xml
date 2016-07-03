@@ -13,4 +13,5 @@
     <string name="color_distribution">Color distribution</string>
     <string name="use_new_view">Use new view</string>
     <string name="close_settings">Close settings</string>
+    <string name="feature_not_yet_available">Feature not yet available</string>
 </resources>
