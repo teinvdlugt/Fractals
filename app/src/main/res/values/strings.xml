@@ -11,7 +11,7 @@
     <string name="use_color">Use color</string>
     <string name="max_color_iterations">Max color iterations</string>
     <string name="color_distribution">Color distribution</string>
-    <string name="use_new_view">Use new view</string>
+    <string name="use_new_view">Use pinch-to-zoom view (beta)</string>
     <string name="close_settings">Close settings</string>
-    <string name="feature_not_yet_available">Feature not yet available</string>
+    <string name="not_yet_available">Not yet available</string>
 </resources>

@@ -4,12 +4,11 @@ import android.annotation.SuppressLint;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.AdapterView;
@@ -40,10 +39,15 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         makeTabletLayout();
         setUseNewView();
-        setEditTextTexts();
         setSpinnerAdapter();
         setCheckBox();
         setSwitchListener();
+    }
+
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        setEditTextTexts();
     }
 
     private void initViews() {
@@ -101,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             resolutionET.setText(fractalView.getResolution() + "");
         } catch (UnsupportedOperationException e) {
-            resolutionET.setText(getString(R.string.feature_not_yet_available));
+            resolutionET.setText(getString(R.string.not_yet_available));
             resolutionET.setEnabled(false);
         }
     }
