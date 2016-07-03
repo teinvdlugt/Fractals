@@ -19,8 +19,12 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Spinner;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
+
 public class MainActivity extends AppCompatActivity {
     private static final String USE_NEW_VIEW_PREF = "use_new_view";
+
+    private FirebaseAnalytics firebaseAnalytics;
 
     private AbstractFractalView fractalView;
     private FrameLayout fractalViewContainer;
@@ -34,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this);
         setContentView(R.layout.activity_main);
 
         initViews();
