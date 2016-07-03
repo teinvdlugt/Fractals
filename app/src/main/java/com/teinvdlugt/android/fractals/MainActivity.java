@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private void initViews() {
         bottomSheet = findViewById(R.id.bottom_sheet);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
         // TODO drawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
         //fractalView = (FractalView2) findViewById(R.id.fractalView);
         fractalViewContainer = (FrameLayout) findViewById(R.id.fractalView_container);
