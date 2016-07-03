@@ -55,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
         bottomSheet = findViewById(R.id.bottom_sheet);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
-        // TODO drawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
         //fractalView = (FractalView2) findViewById(R.id.fractalView);
         fractalViewContainer = (FrameLayout) findViewById(R.id.fractalView_container);
         resolutionET = (EditText) findViewById(R.id.resolution);
@@ -240,6 +239,17 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case BottomSheetBehavior.STATE_COLLAPSED:
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+                break;
+        }
+    }
+
+    public void onClickSettingsBar(View view) {
+        switch (bottomSheetBehavior.getState()) {
+            case BottomSheetBehavior.STATE_EXPANDED:
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                break;
+            case BottomSheetBehavior.STATE_COLLAPSED:
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
                 break;
         }
     }

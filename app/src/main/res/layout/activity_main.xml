@@ -29,7 +29,7 @@
             android:contentDescription="@string/action_settings"
             android:onClick="onClickSettings"
             android:padding="5dp"
-            app:srcCompat="@drawable/ic_settings_black_24dp" />
+            app:srcCompat="@drawable/ic_settings_black_white_border_24dp" />
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -41,7 +41,7 @@
             android:contentDescription="@string/cancel"
             android:onClick="onClickCancel"
             android:padding="5dp"
-            app:srcCompat="@drawable/ic_cancel_black_24dp" />
+            app:srcCompat="@drawable/ic_cancel_black_white_border_24dp" />
     </RelativeLayout>
 
     <android.support.v4.widget.NestedScrollView
@@ -49,129 +49,162 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/bottomSheetBackgroundColor"
+        app:behavior_hideable="true"
         app:behavior_peekHeight="?actionBarSize"
-        app:layout_behavior="android.support.design.widget.BottomSheetBehavior"
-        app:behavior_hideable="true">
+        app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="vertical">
 
-            <LinearLayout
+            <RelativeLayout
+                android:background="?selectableItemBackground"
+                android:onClick="onClickSettingsBar"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="8dp">
+                android:layout_height="?actionBarSize">
+
+                <ImageView
+                    android:id="@+id/settings_image"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/action_settings"
+                    app:srcCompat="@drawable/ic_settings_black_36dp" />
 
                 <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/use_new_view" />
-
-                <android.support.v7.widget.SwitchCompat
-                    android:id="@+id/useNewView_switch"
+                    android:layout_centerVertical="true"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-
-            <android.support.design.widget.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <EditText
-                    android:id="@+id/resolution"
-                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/resolution_in_px"
-                    android:inputType="number" />
-            </android.support.design.widget.TextInputLayout>
-
-            <android.support.design.widget.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <EditText
-                    android:id="@+id/precision"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/precision"
-                    android:inputType="number" />
-            </android.support.design.widget.TextInputLayout>
-
-            <android.support.design.widget.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <EditText
-                    android:id="@+id/escapeValue"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/escape_value"
-                    android:inputType="numberDecimal" />
-            </android.support.design.widget.TextInputLayout>
-
-            <Spinner
-                android:id="@+id/fractalSpinner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:layout_marginTop="8dp" />
-
-            <CheckBox
-                android:id="@+id/colorCheckbox"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/use_color" />
-
-            <android.support.design.widget.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <EditText
-                    android:id="@+id/maxColorIterations_editText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/max_color_iterations"
-                    android:inputType="numberDecimal" />
-            </android.support.design.widget.TextInputLayout>
-
-            <android.support.design.widget.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <EditText
-                    android:id="@+id/colorDistribution_editText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/color_distribution"
-                    android:inputType="numberDecimal" />
-            </android.support.design.widget.TextInputLayout>
+                    android:layout_toEndOf="@id/settings_image"
+                    android:layout_toRightOf="@id/settings_image"
+                    android:text="@string/action_settings" />
+            </RelativeLayout>
 
             <LinearLayout
-                style="?attr/buttonBarStyle"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <Button
-                    style="?attr/buttonBarButtonStyle"
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:onClick="onClickApply"
-                    android:text="@string/apply" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="8dp">
 
-                <Button
-                    style="?attr/buttonBarButtonStyle"
-                    android:layout_width="0dp"
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/use_new_view" />
+
+                    <android.support.v7.widget.SwitchCompat
+                        android:id="@+id/useNewView_switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/resolution"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/resolution_in_px"
+                        android:inputType="number" />
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/precision"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/precision"
+                        android:inputType="number" />
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/escapeValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/escape_value"
+                        android:inputType="numberDecimal" />
+                </android.support.design.widget.TextInputLayout>
+
+                <Spinner
+                    android:id="@+id/fractalSpinner"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:onClick="onClickRestoreZoom"
-                    android:text="@string/restore_zoom" />
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginTop="8dp" />
+
+                <CheckBox
+                    android:id="@+id/colorCheckbox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/use_color" />
+
+                <android.support.design.widget.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/maxColorIterations_editText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/max_color_iterations"
+                        android:inputType="numberDecimal" />
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/colorDistribution_editText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/color_distribution"
+                        android:inputType="numberDecimal" />
+                </android.support.design.widget.TextInputLayout>
+
+                <LinearLayout
+                    style="?attr/buttonBarStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <Button
+                        style="?attr/buttonBarButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:onClick="onClickApply"
+                        android:text="@string/apply" />
+
+                    <Button
+                        style="?attr/buttonBarButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:onClick="onClickRestoreZoom"
+                        android:text="@string/restore_zoom" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
+
     </android.support.v4.widget.NestedScrollView>
 </android.support.design.widget.CoordinatorLayout>

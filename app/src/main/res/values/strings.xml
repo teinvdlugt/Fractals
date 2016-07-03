@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Fractals</string>
 
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="apply">Apply</string>
     <string name="restore_zoom">Restore zoom</string>
@@ -13,4 +12,5 @@
     <string name="max_color_iterations">Max color iterations</string>
     <string name="color_distribution">Color distribution</string>
     <string name="use_new_view">Use new view</string>
+    <string name="close_settings">Close settings</string>
 </resources>
