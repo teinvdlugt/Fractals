@@ -2,12 +2,13 @@ package com.teinvdlugt.android.fractals;
 
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
+import android.support.design.widget.BottomSheetBehavior;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -22,10 +23,11 @@ public class MainActivity extends AppCompatActivity {
     private AbstractFractalView fractalView;
     private FrameLayout fractalViewContainer;
     private EditText resolutionET, precisionET, escapeValueET, maxColorIterationsET, colorDistributionET;
-    private DrawerLayout drawerLayout;
     private CheckBox colorCB;
     private Spinner fractalSpinner;
     private SwitchCompat useNewViewSwitch;
+    private View bottomSheet;
+    private BottomSheetBehavior bottomSheetBehavior;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         initViews();
+        makeTabletLayout();
 
         onSwitchChanged(false);
 
@@ -49,7 +52,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        drawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
+        bottomSheet = findViewById(R.id.bottom_sheet);
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+        // TODO drawerLayout = (DrawerLayout) findViewById(R.id.drawerLayout);
         //fractalView = (FractalView2) findViewById(R.id.fractalView);
         fractalViewContainer = (FrameLayout) findViewById(R.id.fractalView_container);
         resolutionET = (EditText) findViewById(R.id.resolution);
@@ -60,6 +65,21 @@ public class MainActivity extends AppCompatActivity {
         maxColorIterationsET = (EditText) findViewById(R.id.maxColorIterations_editText);
         colorDistributionET = (EditText) findViewById(R.id.colorDistribution_editText);
         useNewViewSwitch = (SwitchCompat) findViewById(R.id.useNewView_switch);
+    }
+
+    private void makeTabletLayout() {
+        bottomSheet.post(new Runnable() {
+            @Override
+            public void run() {
+                float maxBottomSheetWidth = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 620, getResources().getDisplayMetrics());
+                if (bottomSheet.getWidth() > maxBottomSheetWidth) {
+                    int leftRightMargin = (int) ((bottomSheet.getWidth() - maxBottomSheetWidth) / 2);
+                    CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) bottomSheet.getLayoutParams();
+                    params.leftMargin = params.rightMargin = leftRightMargin;
+                }
+            }
+        });
     }
 
     private void setSpinnerAdapter() {
@@ -170,14 +190,10 @@ public class MainActivity extends AppCompatActivity {
         fractalViewContainer.addView(fractalView, params);
     }
 
-    public void onClickSwitchLayout(View view) {
-        useNewViewSwitch.performClick();
-    }
-
     public void onClickApply(View view) {
         applyValues();
-        drawerLayout.closeDrawer(GravityCompat.START);
         fractalView.onClickApply();
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
     }
 
     public void applyValues() {
@@ -206,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
     public void onClickRestoreZoom(View view) {
         applyValues();
         fractalView.onClickRestoreZoom();
-        drawerLayout.closeDrawer(GravityCompat.START);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
     }
 
     public void onClickCancel(View view) {
@@ -214,14 +230,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickSettings(View view) {
-        drawerLayout.openDrawer(GravityCompat.START);
+        switch (bottomSheetBehavior.getState()) {
+            case BottomSheetBehavior.STATE_HIDDEN:
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                break;
+            case BottomSheetBehavior.STATE_EXPANDED:
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+                break;
+            case BottomSheetBehavior.STATE_COLLAPSED:
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+                break;
+        }
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus && Build.VERSION.SDK_INT >= 19) {
-            drawerLayout.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            fractalViewContainer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
