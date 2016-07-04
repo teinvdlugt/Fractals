@@ -9,6 +9,8 @@ import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.AdapterView;
@@ -17,6 +19,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.SeekBar;
 import android.widget.Spinner;
 
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -29,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private AbstractFractalView fractalView;
     private FrameLayout fractalViewContainer;
     private EditText resolutionET, precisionET, escapeValueET, maxColorIterationsET, colorDistributionET;
+    private SeekBar resolutionSB, precisionSB, escapeValueSB, maxColorIterationsSB, colorDistributionSB;
     private CheckBox colorCB;
     private Spinner fractalSpinner;
     private SwitchCompat useNewViewSwitch;
@@ -42,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         initViews();
+        setTextWatchers();
         makeTabletLayout();
         setUseNewView();
         setSpinnerAdapter();
@@ -53,21 +58,47 @@ public class MainActivity extends AppCompatActivity {
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         setEditTextTexts();
+        setSeekBarProgresses();
     }
 
     private void initViews() {
         bottomSheet = findViewById(R.id.bottom_sheet);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
-        //fractalView = (FractalView2) findViewById(R.id.fractalView);
+
         fractalViewContainer = (FrameLayout) findViewById(R.id.fractalView_container);
-        resolutionET = (EditText) findViewById(R.id.resolution);
-        precisionET = (EditText) findViewById(R.id.precision);
-        escapeValueET = (EditText) findViewById(R.id.escapeValue);
-        colorCB = (CheckBox) findViewById(R.id.colorCheckbox);
-        fractalSpinner = (Spinner) findViewById(R.id.fractalSpinner);
+
+        resolutionET = (EditText) findViewById(R.id.resolution_editText);
+        precisionET = (EditText) findViewById(R.id.precision_editText);
+        escapeValueET = (EditText) findViewById(R.id.escapeValue_editText);
         maxColorIterationsET = (EditText) findViewById(R.id.maxColorIterations_editText);
         colorDistributionET = (EditText) findViewById(R.id.colorDistribution_editText);
+
+        resolutionSB = (SeekBar) findViewById(R.id.resolution_seekBar);
+        precisionSB = (SeekBar) findViewById(R.id.precision_seekBar);
+        escapeValueSB = (SeekBar) findViewById(R.id.escapeValue_seekBar);
+        maxColorIterationsSB = (SeekBar) findViewById(R.id.maxColorIterations_seekBar);
+        colorDistributionSB = (SeekBar) findViewById(R.id.colorDistribution_seekBar);
+
+        // SeekBar listeners
+        SeekBar.OnSeekBarChangeListener listener = new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                onSeekBarChanged(seekBar, progress, fromUser);
+            }
+
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        };
+        resolutionSB.setOnSeekBarChangeListener(listener);
+        precisionSB.setOnSeekBarChangeListener(listener);
+        escapeValueSB.setOnSeekBarChangeListener(listener);
+        maxColorIterationsSB.setOnSeekBarChangeListener(listener);
+        colorDistributionSB.setOnSeekBarChangeListener(listener);
+
+        colorCB = (CheckBox) findViewById(R.id.colorCheckbox);
+        fractalSpinner = (Spinner) findViewById(R.id.fractalSpinner);
         useNewViewSwitch = (SwitchCompat) findViewById(R.id.useNewView_switch);
     }
 
@@ -102,17 +133,30 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     private void setEditTextTexts() {
-        precisionET.setText(fractalView.getPrecision() + "");
-        escapeValueET.setText(fractalView.getEscapeValue() + "");
-        maxColorIterationsET.setText(fractalView.getMaxColorIterations() + "");
-        colorDistributionET.setText(fractalView.getColorDistribution() + "");
-
         try {
             resolutionET.setText(fractalView.getResolution() + "");
         } catch (UnsupportedOperationException e) {
             resolutionET.setText(getString(R.string.not_yet_available));
             resolutionET.setEnabled(false);
         }
+
+        precisionET.setText(fractalView.getPrecision() + "");
+        escapeValueET.setText(fractalView.getEscapeValue() + "");
+        maxColorIterationsET.setText(fractalView.getMaxColorIterations() + "");
+        colorDistributionET.setText(fractalView.getColorDistribution() + "");
+    }
+
+    private void setSeekBarProgresses() {
+        try {
+            setSeekBar(resolutionSB, fractalView.getResolution());
+        } catch (UnsupportedOperationException e) {
+            resolutionSB.setEnabled(false);
+        }
+
+        setSeekBar(precisionSB, fractalView.getPrecision());
+        setSeekBar(escapeValueSB, (int) (fractalView.getEscapeValue() * 100));
+        setSeekBar(maxColorIterationsSB, (int) fractalView.getMaxColorIterations());
+        setSeekBar(colorDistributionSB, (int) (fractalView.getColorDistribution() * 100));
     }
 
     private void setSpinnerAdapter() {
@@ -157,6 +201,126 @@ public class MainActivity extends AppCompatActivity {
         PreferenceManager.getDefaultSharedPreferences(this).edit()
                 .putBoolean(USE_NEW_VIEW_PREF, isChecked).apply();
         recreate();
+    }
+
+    private void onSeekBarChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        if (!fromUser || seekBar == null)
+            return;
+
+        if (seekBar.equals(resolutionSB)) {
+            resolutionET.setText(progress + "");
+        } else if (seekBar.equals(precisionSB)) {
+            precisionET.setText(progress + "");
+        } else if (seekBar.equals(escapeValueSB)) {
+            escapeValueET.setText(progress / 100. + "");
+        } else if (seekBar.equals(maxColorIterationsSB)) {
+            maxColorIterationsET.setText(progress + "");
+        } else if (seekBar.equals(colorDistributionSB)) {
+            colorDistributionET.setText(progress / 100 + "");
+        }
+    }
+
+    private void setTextWatchers() {
+        resolutionET.addTextChangedListener(new TextWatcher() { // TODO: 4-7-2016 Does resolution work?
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                int newValue = parseInteger(resolutionET.getText().toString());
+                if (newValue != -1) {
+                    setSeekBar(resolutionSB, newValue);
+                    fractalView.setResolution(newValue);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+        precisionET.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                int newValue = parseInteger(precisionET.getText().toString());
+                if (newValue != -1) {
+                    setSeekBar(precisionSB, newValue);
+                    fractalView.setPrecision(newValue);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+        escapeValueET.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                double newValue = parseDouble(escapeValueET.getText().toString());
+                if (newValue != -1) {
+                    setSeekBar(escapeValueSB, (int) (newValue * 100));
+                    fractalView.setEscapeValue(newValue);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+        maxColorIterationsET.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                double newValue = parseDouble(maxColorIterationsET.getText().toString());
+                if (newValue != -1) {
+                    setSeekBar(maxColorIterationsSB, (int) newValue);
+                    fractalView.setMaxColorIterations(newValue);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+        colorDistributionET.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                double newValue = parseDouble(colorDistributionET.getText().toString());
+                if (newValue != -1) {
+                    setSeekBar(colorDistributionSB, (int) (newValue * 100));
+                    fractalView.setColorDistribution(newValue);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
     }
 
     public void onClickApply(View view) {
@@ -233,6 +397,28 @@ public class MainActivity extends AppCompatActivity {
                     | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                     | View.SYSTEM_UI_FLAG_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        }
+    }
+
+    private static void setSeekBar(SeekBar seekBar, int progress) {
+        seekBar.setProgress(Math.min(progress, seekBar.getMax()));
+    }
+
+    private static int parseInteger(String string) {
+        try {
+            return Integer.parseInt(string);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    private static double parseDouble(String string) {
+        try {
+            return Double.parseDouble(string);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            return -1;
         }
     }
 }
