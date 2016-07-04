@@ -1,6 +1,5 @@
 package com.teinvdlugt.android.fractals;
 
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -21,27 +20,30 @@ public class FractalView2 extends AbstractFractalView {
     public static final int MULTIBROT_3 = 3;
     public static final int MULTIBROT_4 = 4;
 
-    public static final int COLOR_UNCALCULATED = Color.CYAN - 1;
+    public static final int COLOR_NOT_CALCULATED = Color.CYAN - 1;
+    public static final int ITERATIONS_NOT_CALCULATED = -1;
 
     private int bitmapWidth, bitmapHeight;
     private Paint paint = new Paint();
     private boolean calculating = false;
     private CalculatingTask calculatingTask;
 
+    private int[] newResultMap;
     private int[] newBitmap;
     private List<double[]> newWanted = new ArrayList<>();
     private double newStartReal = -2, newStartImg = 2, newRangeReal = 4, newRangeImg = 4;
+    private int[] resultMap; // An array with mappings equal to the bitmap but not filled with colors but with iteration counts.
     private int[] bitmap;
     private double startReal = -1, startImg = -1;
     private double rangeReal = -1, rangeImg = -1;
     private List<double[]> wanted = new ArrayList<>();
-    private double escapeValue = 2;
 
-    private int precision = 100;
+    private double escapeValue = 2;
+    private int precision = 400;
     private double maxColorIterations = 400;
     private double colorDistribution = 30;
-    private int fractal = MANDELBROT_SET;
     private boolean useColor = true;
+    private int fractal = MANDELBROT_SET;
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -78,6 +80,7 @@ public class FractalView2 extends AbstractFractalView {
         bitmapWidth = w / 8;
         bitmapHeight = h / 8;
         bitmap = newBitmap = new int[bitmapWidth * bitmapHeight];
+        resultMap = newResultMap = new int[bitmapWidth * bitmapHeight];
         /*widthResolution = (int) ((double) w / oldw * widthResolution);
         heightResolution = (int) ((double) h / oldh * heightResolution);*/
     }
@@ -180,8 +183,8 @@ public class FractalView2 extends AbstractFractalView {
 
                 int xpx = (int) Math.round((cReal - startReal) / rangeReal * bitmapWidth);
                 int ypx = (int) Math.round((startImg - cImg) / rangeImg * bitmapHeight);
-                int color = iterations == precision ? Color.BLACK : useColor ? resolveColor(iterations) : Color.WHITE;
-                batch[i] = (new int[]{xpx, ypx, color});
+                // int color = iterations == precision ? Color.BLACK : useColor ? resolveColor(iterations) : Color.WHITE;
+                batch[i] = (new int[]{xpx, ypx, iterations});
 
                 if (!calculating) break;
                 if (i == batchSize - 1) {
@@ -201,22 +204,28 @@ public class FractalView2 extends AbstractFractalView {
         protected void onProgressUpdate(int[]... values) {
             for (int[] pixel : values) {
                 try {
-                    bitmap[bitmapWidth * pixel[1] + pixel[0]] = pixel[2];
+                    // pixel[0]: the x position in the bitmap
+                    // pixel[1]: the y position in the bitmap
+                    // pixel[2]: the amount of iterations on this complex number
+                    int index = bitmapWidth * pixel[1] + pixel[0];
+                    resultMap[index] = pixel[2];
+                    int color = pixel[2] == precision ? Color.BLACK : useColor ? resolveColor(pixel[2]) : Color.WHITE;
+                    bitmap[index] = color;
                 } catch (IndexOutOfBoundsException ignored) {}
             }
             invalidate();
         }
+    }
 
-        protected int resolveColor(int iterations) {
-            // See FractalView.resolveColor() for comments
-            double value = 1 - Math.pow(1 - iterations / maxColorIterations, colorDistribution);
-            if (value >= 1.) return Color.WHITE;
-            double valuePerUnitColor = .5 / 255;
-            int blue = (int) Math.max(255 - value / valuePerUnitColor, 0);
-            int red = (int) Math.max(255 - Math.abs(.5 - value) / valuePerUnitColor, 0);
-            int green = (int) Math.max(255 - (1. - value) / valuePerUnitColor, 0);
-            return Color.rgb(red, green, blue);
-        }
+    protected int resolveColor(int iterations) {
+        // See FractalView.resolveColor() for comments
+        double value = 1 - Math.pow(1 - iterations / maxColorIterations, colorDistribution);
+        if (value >= 1.) return Color.WHITE;
+        double valuePerUnitColor = .5 / 255;
+        int blue = (int) Math.max(255 - value / valuePerUnitColor, 0);
+        int red = (int) Math.max(255 - Math.abs(.5 - value) / valuePerUnitColor, 0);
+        int green = (int) Math.max(255 - (1. - value) / valuePerUnitColor, 0);
+        return Color.rgb(red, green, blue);
     }
 
     private void calculateWanted() {
@@ -237,11 +246,8 @@ public class FractalView2 extends AbstractFractalView {
                 prevXDrag1 = event.getX();
                 prevYDrag1 = event.getY();
                 pointerId1 = event.getPointerId(0);
+                newResultMap = Arrays.copyOf(resultMap, resultMap.length);
                 newBitmap = Arrays.copyOf(bitmap, bitmap.length);
-                /*newStartReal = startReal;
-                newStartImg = startImg;
-                newRangeReal = rangeReal;
-                newRangeImg = rangeImg;*/
                 return true;
             case MotionEvent.ACTION_POINTER_DOWN:
                 if (pointerId2 != -1)
@@ -275,6 +281,7 @@ public class FractalView2 extends AbstractFractalView {
                 rangeImg = newRangeImg;
                 startReal = newStartReal;
                 startImg = newStartImg;
+                resultMap = newResultMap;
                 bitmap = newBitmap;
                 prevXDrag1 = prevXDrag2 = prevYDrag1 = prevYDrag2 =
                         pointerId2 = pointerId1 = -1;
@@ -371,17 +378,23 @@ public class FractalView2 extends AbstractFractalView {
                 int previousXpx = (int) Math.round((real - startReal) / rangeReal * bitmapWidth);
                 int previousYpx = (int) Math.round((startImg - img) / rangeImg * bitmapHeight);
 
+                int iterations;
                 int color;
                 if (previousXpx < 0 || previousYpx < 0 || previousXpx >= bitmapWidth || previousYpx >= bitmapHeight) {
-                    color = COLOR_UNCALCULATED;
+                    iterations = ITERATIONS_NOT_CALCULATED;
+                    color = COLOR_NOT_CALCULATED;
                     newWanted.add(new double[]{real, img}); // TODO don't when zooming? Because redundant
                 } else {
-                    color = bitmap[bitmapWidth * previousYpx + previousXpx];
-                    if (color == COLOR_UNCALCULATED) {
+                    int index = bitmapWidth * previousYpx + previousXpx;
+                    iterations = resultMap[index];
+                    color = bitmap[index];
+                    if (iterations == ITERATIONS_NOT_CALCULATED) {
                         newWanted.add(new double[]{real, img});
                     }
                 }
-                newBitmap[bitmapWidth * ypx + xpx] = color;
+                int index = bitmapWidth * ypx + xpx;
+                newResultMap[index] = iterations;
+                newBitmap[index] = color;
             }
         }
     }
