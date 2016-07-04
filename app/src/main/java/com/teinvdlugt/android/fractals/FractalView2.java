@@ -29,11 +29,11 @@ public class FractalView2 extends AbstractFractalView {
     private CalculatingTask calculatingTask;
 
     private int[] newResultMap;
-    private int[] newBitmap;
+    private int[] bitmap;
+    // private int[] newBitmap;
     private List<double[]> newWanted = new ArrayList<>();
     private double newStartReal = -2, newStartImg = 2, newRangeReal = 4, newRangeImg = 4;
     private int[] resultMap; // An array with mappings equal to the bitmap but not filled with colors but with iteration counts.
-    private int[] bitmap;
     private double startReal = -1, startImg = -1;
     private double rangeReal = -1, rangeImg = -1;
     private List<double[]> wanted = new ArrayList<>();
@@ -50,7 +50,7 @@ public class FractalView2 extends AbstractFractalView {
         super.onDraw(canvas);
 
         canvas.drawBitmap(Bitmap.createScaledBitmap(
-                Bitmap.createBitmap(newBitmap, bitmapWidth, bitmapHeight, Bitmap.Config.RGB_565),
+                Bitmap.createBitmap(bitmap, bitmapWidth, bitmapHeight, Bitmap.Config.RGB_565),
                 getWidth(), getHeight(), false), 0, 0, paint);
     }
 
@@ -79,8 +79,8 @@ public class FractalView2 extends AbstractFractalView {
         rangeImg = newRangeImg = newRangeImg + rangeImgDiff;
         bitmapWidth = w / 8;
         bitmapHeight = h / 8;
-        bitmap = newBitmap = new int[bitmapWidth * bitmapHeight];
         resultMap = newResultMap = new int[bitmapWidth * bitmapHeight];
+        bitmap = new int[bitmapWidth * bitmapHeight];
         /*widthResolution = (int) ((double) w / oldw * widthResolution);
         heightResolution = (int) ((double) h / oldh * heightResolution);*/
     }
@@ -100,7 +100,7 @@ public class FractalView2 extends AbstractFractalView {
     }
 
     /**
-     * Set {@code calculating} member variable to false to cancel instead of calling task.cancel(boolean);
+     * To cancel this task, set the {@code calculating} field to false instead of calling task.cancel().
      */
     private class CalculatingTask extends AsyncTask<Void, int[], Void> {
         private final int batchSize = 20;
@@ -209,8 +209,7 @@ public class FractalView2 extends AbstractFractalView {
                     // pixel[2]: the amount of iterations on this complex number
                     int index = bitmapWidth * pixel[1] + pixel[0];
                     resultMap[index] = pixel[2];
-                    int color = pixel[2] == precision ? Color.BLACK : useColor ? resolveColor(pixel[2]) : Color.WHITE;
-                    bitmap[index] = color;
+                    bitmap[index] = resolveColor(pixel[2]);
                 } catch (IndexOutOfBoundsException ignored) {}
             }
             invalidate();
@@ -218,7 +217,12 @@ public class FractalView2 extends AbstractFractalView {
     }
 
     protected int resolveColor(int iterations) {
-        // See FractalView.resolveColor() for comments
+        if (iterations == precision)
+            return Color.BLACK;
+        if (!useColor)
+            return Color.WHITE;
+
+        // See FractalView.resolveColor() for comments on the calculations
         double value = 1 - Math.pow(1 - iterations / maxColorIterations, colorDistribution);
         if (value >= 1.) return Color.WHITE;
         double valuePerUnitColor = .5 / 255;
@@ -247,7 +251,6 @@ public class FractalView2 extends AbstractFractalView {
                 prevYDrag1 = event.getY();
                 pointerId1 = event.getPointerId(0);
                 newResultMap = Arrays.copyOf(resultMap, resultMap.length);
-                newBitmap = Arrays.copyOf(bitmap, bitmap.length);
                 return true;
             case MotionEvent.ACTION_POINTER_DOWN:
                 if (pointerId2 != -1)
@@ -282,7 +285,6 @@ public class FractalView2 extends AbstractFractalView {
                 startReal = newStartReal;
                 startImg = newStartImg;
                 resultMap = newResultMap;
-                bitmap = newBitmap;
                 prevXDrag1 = prevXDrag2 = prevYDrag1 = prevYDrag2 =
                         pointerId2 = pointerId1 = -1;
                 return true;
@@ -387,15 +389,21 @@ public class FractalView2 extends AbstractFractalView {
                 } else {
                     int index = bitmapWidth * previousYpx + previousXpx;
                     iterations = resultMap[index];
-                    color = bitmap[index];
+                    color = resolveColor(iterations);
                     if (iterations == ITERATIONS_NOT_CALCULATED) {
                         newWanted.add(new double[]{real, img});
                     }
                 }
                 int index = bitmapWidth * ypx + xpx;
                 newResultMap[index] = iterations;
-                newBitmap[index] = color;
+                bitmap[index] = color;
             }
+        }
+    }
+
+    private void recreateColorBitmap() {
+        for (int i = 0; i < newResultMap.length; i++) {
+            bitmap[i] = resolveColor(newResultMap[i]);
         }
     }
 
@@ -420,7 +428,11 @@ public class FractalView2 extends AbstractFractalView {
     }
 
     public void setColorDistribution(double colorDistribution) {
-        this.colorDistribution = colorDistribution;
+        if (this.colorDistribution != colorDistribution) {
+            this.colorDistribution = colorDistribution;
+            recreateColorBitmap();
+            invalidate();
+        }
     }
 
     public boolean getUseColor() {
@@ -428,7 +440,11 @@ public class FractalView2 extends AbstractFractalView {
     }
 
     public void setUseColor(boolean useColor) {
-        this.useColor = useColor;
+        if (this.useColor != useColor) {
+            this.useColor = useColor;
+            recreateColorBitmap();
+            invalidate();
+        }
     }
 
     public double getMaxColorIterations() {
@@ -436,7 +452,11 @@ public class FractalView2 extends AbstractFractalView {
     }
 
     public void setMaxColorIterations(double maxColorIterations) {
-        this.maxColorIterations = maxColorIterations;
+        if (maxColorIterations != this.maxColorIterations) {
+            this.maxColorIterations = maxColorIterations;
+            recreateColorBitmap();
+            invalidate();
+        }
     }
 
     public double getEscapeValue() {
