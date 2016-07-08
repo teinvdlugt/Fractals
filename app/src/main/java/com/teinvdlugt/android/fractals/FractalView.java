@@ -13,7 +13,6 @@ import android.view.MotionEvent;
 import java.util.Arrays;
 
 public class FractalView extends AbstractFractalView {
-
     public static final int MANDELBROT_SET = 0;
     public static final int TRICORN = 1;
     public static final int BURNING_SHIP = 2;
@@ -30,7 +29,9 @@ public class FractalView extends AbstractFractalView {
     private double colorDistribution = 30;
 
     private int physicalWidth, physicalHeight;
-    protected Bitmap bitmap;
+    private int[] resultMap;
+    private int[] bitmap;
+    // protected Bitmap bitmap;
     protected Bitmap scaledBitmap;
     private CalculatingTask calculatingTask;
 
@@ -40,7 +41,8 @@ public class FractalView extends AbstractFractalView {
     private class CalculatingTask extends AsyncTask<Void, Void, Void> {
         double finalStartReal = -1, finalStartImg = -1, finalRangeReal = -1, finalRangeImg = -1, finalEscapeValue = -1;
         int finalWidthResolution = -1, finalHeightResolution = -1, finalPrecision = -1, finalUpdateRows = -1;
-        Bitmap backupBitmap;
+        int[] backupResultMap;
+        int[] backupBitmap;
         boolean restoreBackup = true;
 
         OnCancelledListener onCancelledListener;
@@ -62,17 +64,31 @@ public class FractalView extends AbstractFractalView {
         @Override
         protected Void doInBackground(Void... params) {
             if (bitmap != null) {
-                backupBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
-                if (bitmap.getWidth() != widthResolution || bitmap.getHeight() != heightResolution) {
-                    bitmap = Bitmap.createScaledBitmap(bitmap, finalWidthResolution, finalHeightResolution, false);
+                // backupBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
+                backupResultMap = Arrays.copyOf(resultMap, resultMap.length);
+                backupBitmap = Arrays.copyOf(bitmap, bitmap.length);
+                if (bitmap.length != finalWidthResolution * finalHeightResolution) {
+                    Bitmap bitmap2 = Bitmap.createBitmap(bitmap, 0, backupWidthResolution,
+                            backupWidthResolution, backupHeightResolution, Bitmap.Config.RGB_565);
+                    Bitmap scaled = Bitmap.createScaledBitmap(bitmap2, finalWidthResolution, finalHeightResolution, false);
+                    bitmap = new int[finalHeightResolution * finalWidthResolution];
+                    scaled.getPixels(bitmap, 0, finalWidthResolution, 0, 0, finalWidthResolution, finalHeightResolution);
+
+                    resultMap = new int[finalHeightResolution * finalWidthResolution];
                 }
+                /*if (bitmap.getWidth() != widthResolution || bitmap.getHeight() != heightResolution) {
+                    bitmap = Bitmap.createScaledBitmap(bitmap, finalWidthResolution, finalHeightResolution, false);
+                }*/
             } else {
-                bitmap = Bitmap.createBitmap(finalWidthResolution, finalHeightResolution, Bitmap.Config.RGB_565);
+                resultMap = new int[finalWidthResolution * finalHeightResolution];
+                bitmap = new int[finalWidthResolution * finalHeightResolution];
+                // bitmap = Bitmap.createBitmap(finalWidthResolution, finalHeightResolution, Bitmap.Config.RGB_565);
             }
             int[] progressLine = new int[finalWidthResolution];
             Arrays.fill(progressLine, Color.RED);
 
-            int[] colors = new int[finalWidthResolution * finalUpdateRows];
+            // int[] results = new int[finalWidthResolution * finalUpdateRows];
+            // int[] colors = new int[finalWidthResolution * finalUpdateRows];
             for (int y = 0; y < finalHeightResolution; y++) {
                 if (isCancelled()) return null;
                 for (int x = 0; x < finalWidthResolution; x++) {
@@ -131,106 +147,57 @@ public class FractalView extends AbstractFractalView {
                             break;
                     }
 
+                    int index = y * finalWidthResolution + x;
+                    resultMap[index] = iterations;
+                    bitmap[index] = resolveColor(iterations, finalPrecision);
+
+                    /*results[(y % finalUpdateRows) * finalWidthResolution  + x] = iterations;
                     colors[(y % finalUpdateRows) * finalWidthResolution + x] =
                             iterations == finalPrecision ? Color.BLACK :
-                                    useColor ? resolveColor(iterations) : Color.WHITE;
+                                    useColor ? resolveColor(iterations) : Color.WHITE;*/
                 }
 
                 if (isCancelled()) return null;
 
                 if ((y + 1) % finalUpdateRows == 0) {
+                    if (y + 1 != finalHeightResolution) {
+                        // Draw progress line
+                        for (int x = 0; x < finalWidthResolution + 1; x++) {
+                            bitmap[(y + 1) * finalWidthResolution + x] = Color.RED;
+                        }
+                    }
+                    scaledBitmap = Bitmap.createScaledBitmap(
+                            Bitmap.createBitmap(bitmap, 0, finalWidthResolution, finalWidthResolution,
+                                    finalHeightResolution, Bitmap.Config.RGB_565),
+                            physicalWidth, physicalHeight, false);
+                    /*int resultMapStartIndex = finalWidthResolution * (y - finalUpdateRows + 1);
+                    for (int i = resultMapStartIndex; i < resultMapStartIndex + results.length; i++) {
+                        resultMap[i] = results[i - resultMapStartIndex];
+                    }
                     bitmap.setPixels(colors, 0, finalWidthResolution, 0, y - finalUpdateRows + 1, finalWidthResolution, finalUpdateRows);
                     if (y + 1 != bitmap.getHeight()) {
                         bitmap.setPixels(progressLine, 0, finalWidthResolution, 0, y + 1, finalWidthResolution, 1);
                     }
 
-                    scaledBitmap = Bitmap.createScaledBitmap(bitmap, physicalWidth, physicalHeight, false);
+                    scaledBitmap = Bitmap.createScaledBitmap(bitmap, physicalWidth, physicalHeight, false);*/
                     publishProgress();
                 } else if (y == finalHeightResolution - 1) {
-                    bitmap.setPixels(colors, 0, finalWidthResolution, 0, finalHeightResolution - finalHeightResolution % finalUpdateRows,
-                            finalWidthResolution, finalHeightResolution % finalUpdateRows);
-                    scaledBitmap = Bitmap.createScaledBitmap(bitmap, physicalWidth, physicalHeight, false);
+                    /*bitmap.setPixels(colors, 0, finalWidthResolution, 0, finalHeightResolution - finalHeightResolution % finalUpdateRows,
+                            finalWidthResolution, finalHeightResolution % finalUpdateRows);*/
+                    scaledBitmap = Bitmap.createScaledBitmap(
+                            Bitmap.createBitmap(bitmap, 0, finalWidthResolution, finalWidthResolution,
+                                    finalHeightResolution, Bitmap.Config.RGB_565),
+                            physicalWidth, physicalHeight, false); // TODO: 5-7-2016 Only one Bitmap.createBitmap?
                     publishProgress();
                 }
             }
 
-            scaledBitmap = Bitmap.createScaledBitmap(bitmap, physicalWidth, physicalHeight, false);
+            scaledBitmap = Bitmap.createScaledBitmap(
+                    Bitmap.createBitmap(bitmap, 0, finalWidthResolution, finalWidthResolution,
+                            finalHeightResolution, Bitmap.Config.RGB_565),
+                    physicalWidth, physicalHeight, false); // TODO: 5-7-2016 Necessary?
 
             return null;
-        }
-
-        protected int resolveColor(int iterations) {
-            double value = 1 - Math.pow(1 - iterations / maxColorIterations, colorDistribution);
-            //double value = Math.pow(Math.pow(iterations, pow) / 0xffffff, 1. / pow);
-            //double value = Math.pow((double) iterations, pow) / 0xffffff;
-
-            //Log.d("colorvalue", value + "");
-
-            if (value >= 1.) return Color.WHITE;
-
-            // 0.00 blue
-            // 0.50 red
-            // 1.00 green
-
-            double valuePerUnitColor = .5 / 255;
-
-            // 0.00 => 255 blue
-            // 0.50 => 0   blue
-            int blue = (int) Math.max(255 - value / valuePerUnitColor, 0);
-
-            // 0.00 => 0   red
-            // 0.50 => 255 red
-            // 1.00 => 0   red
-            int red = (int) Math.max(255 - Math.abs(.5 - value) / valuePerUnitColor, 0);
-            int green = (int) Math.max(255 - (1. - value) / valuePerUnitColor, 0);
-
-            return Color.rgb(red, green, blue);
-
-            /*int color = (int) Math.pow(iterations, pow);
-            if (color > 0xffffff) return Color.WHITE;
-
-            String hexStr = "#" + Integer.toHexString(color);
-            while (hexStr.length() < 7) hexStr += "0";
-
-            return Color.parseColor(hexStr);*/
-
-            /*// white --> green --> red --> blue
-            double value = Math.pow(2, iterations / precision);
-            //double value = Math.pow(-Math.log(iterations/precision), -1);
-            //value = 1.0 / (value * value);
-            // low value => blue
-            // high value => white
-            // 1.0 (highest) value => black
-            if (value >= 1.0) return Color.BLACK;
-
-            // 0.00 blue
-            // 0.33 red
-            // 0.67 green
-            // 0.99 white
-
-            // 0.00 => 255 blue
-            // 0.33 => 0   blue
-            int blue = (int) Math.max((1.0 - value / 0.33) * 255, 0);
-
-            // 0.00 => 0   red
-            // 0.33 => 255 red
-            // 0.67 => 0   red
-            int red = (int) Math.max((1.0 - Math.abs(value - 0.33) / 0.33) * 255, 0);
-            int green = (int) Math.max((1.0 - Math.abs(value - 0.67) / 0.33) * 255, 0);
-
-            // 0.67 => 0.0 white factor
-            // 1.00 => 1.0 white factor
-            double whiteFactor = Math.max((1.0 - Math.abs(value - 1.0) / 0.33), 0);
-
-            // Whitify:
-            // Only green has to be whitified because red and white can never mix.
-            green += (255 - blue) * whiteFactor;
-            red += (255 - red) * whiteFactor;
-            blue += (255 - blue) * whiteFactor;
-
-            Log.d("colors", "value: " + value);
-
-            return Color.rgb(red, green, blue);*/
         }
 
         @Override
@@ -255,8 +222,14 @@ public class FractalView extends AbstractFractalView {
                 // draws scaledBitmap to the canvas and not backupBitmap.
                 // Also the backup of the startReal/Img and rangeReal/Img have to be restored.
                 if (backupBitmap != null) {
-                    bitmap = Bitmap.createBitmap(backupBitmap, 0, 0, backupBitmap.getWidth(), backupBitmap.getHeight());
-                    scaledBitmap = Bitmap.createScaledBitmap(backupBitmap, physicalWidth, physicalHeight, false);
+                    resultMap = backupResultMap;
+                    bitmap = backupBitmap;
+                    scaledBitmap = Bitmap.createScaledBitmap(
+                            Bitmap.createBitmap(bitmap, 0, finalWidthResolution, finalWidthResolution,
+                                    finalHeightResolution, Bitmap.Config.RGB_565),
+                            physicalWidth, physicalHeight, false);
+                    // bitmap = Bitmap.createBitmap(backupBitmap, 0, 0, backupBitmap.getWidth(), backupBitmap.getHeight());
+                    // scaledBitmap = Bitmap.createScaledBitmap(backupBitmap, physicalWidth, physicalHeight, false);
 
                     startReal = backupStartReal;
                     startImg = backupStartImg;
@@ -318,6 +291,115 @@ public class FractalView extends AbstractFractalView {
         }
     }
 
+    protected int resolveColor(int iterations, int precision) {
+        if (iterations == precision)
+            return Color.BLACK;
+        if (!useColor)
+            return Color.WHITE;
+
+        double value = 1 - Math.pow(1 - iterations / maxColorIterations, colorDistribution);
+        //double value = Math.pow(Math.pow(iterations, pow) / 0xffffff, 1. / pow);
+        //double value = Math.pow((double) iterations, pow) / 0xffffff;
+
+        //Log.d("colorvalue", value + "");
+
+        if (value >= 1.) return Color.WHITE;
+
+        // 0.00 blue
+        // 0.50 red
+        // 1.00 green
+
+        double valuePerUnitColor = .5 / 255;
+
+        // 0.00 => 255 blue
+        // 0.50 => 0   blue
+        int blue = (int) Math.max(255 - value / valuePerUnitColor, 0);
+
+        // 0.00 => 0   red
+        // 0.50 => 255 red
+        // 1.00 => 0   red
+        int red = (int) Math.max(255 - Math.abs(.5 - value) / valuePerUnitColor, 0);
+        int green = (int) Math.max(255 - (1. - value) / valuePerUnitColor, 0);
+
+        return Color.rgb(red, green, blue);
+
+            /*int color = (int) Math.pow(iterations, pow);
+            if (color > 0xffffff) return Color.WHITE;
+
+            String hexStr = "#" + Integer.toHexString(color);
+            while (hexStr.length() < 7) hexStr += "0";
+
+            return Color.parseColor(hexStr);*/
+
+            /*// white --> green --> red --> blue
+            double value = Math.pow(2, iterations / precision);
+            //double value = Math.pow(-Math.log(iterations/precision), -1);
+            //value = 1.0 / (value * value);
+            // low value => blue
+            // high value => white
+            // 1.0 (highest) value => black
+            if (value >= 1.0) return Color.BLACK;
+
+            // 0.00 blue
+            // 0.33 red
+            // 0.67 green
+            // 0.99 white
+
+            // 0.00 => 255 blue
+            // 0.33 => 0   blue
+            int blue = (int) Math.max((1.0 - value / 0.33) * 255, 0);
+
+            // 0.00 => 0   red
+            // 0.33 => 255 red
+            // 0.67 => 0   red
+            int red = (int) Math.max((1.0 - Math.abs(value - 0.33) / 0.33) * 255, 0);
+            int green = (int) Math.max((1.0 - Math.abs(value - 0.67) / 0.33) * 255, 0);
+
+            // 0.67 => 0.0 white factor
+            // 1.00 => 1.0 white factor
+            double whiteFactor = Math.max((1.0 - Math.abs(value - 1.0) / 0.33), 0);
+
+            // Whitify:
+            // Only green has to be whitified because red and white can never mix.
+            green += (255 - blue) * whiteFactor;
+            red += (255 - red) * whiteFactor;
+            blue += (255 - blue) * whiteFactor;
+
+            Log.d("colors", "value: " + value);
+
+            return Color.rgb(red, green, blue);*/
+    }
+
+    private AsyncTask<Void, Void, Void> colorTask;
+
+    private void recreateColorBitmap() {
+        if (colorTask != null && (
+                calculatingTask.getStatus() == AsyncTask.Status.RUNNING)) {
+            return;
+        }
+
+        colorTask = new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                for (int i = 0; i < resultMap.length; i++) {
+                    bitmap[i] = resolveColor(resultMap[i], backupPrecision);
+                }
+
+                scaledBitmap = Bitmap.createScaledBitmap(
+                        Bitmap.createBitmap(bitmap, 0, backupWidthResolution,
+                                backupWidthResolution, backupHeightResolution, Bitmap.Config.RGB_565),
+                        physicalWidth, physicalHeight, false);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                invalidate();
+            }
+        };
+        colorTask.execute();
+    }
+
     /**
      * Listener with method invoked by CalculatingTask when onCancelled is called.
      * The reason that it's here and not inside the CalculatingTask is just that
@@ -329,8 +411,10 @@ public class FractalView extends AbstractFractalView {
 
     public void recalculate() {
         if (calculatingTask != null
-                && calculatingTask.getStatus() == AsyncTask.Status.RUNNING)
+                && calculatingTask.getStatus() == AsyncTask.Status.RUNNING) {
+            calculatingTask.setRestoreBackup(false);
             calculatingTask.cancel(true);
+        }
         calculatingTask = new CalculatingTask();
         /*if (calculatingTask == null || calculatingTask.getStatus() != AsyncTask.Status.PENDING) {
             calculatingTask = new CalculatingTask();
@@ -360,6 +444,9 @@ public class FractalView extends AbstractFractalView {
         }
 
         applyDimensions(w, h, oldw, oldh);
+
+        resultMap = null;
+        bitmap = null;
         recalculate();
     }
 
@@ -574,7 +661,10 @@ public class FractalView extends AbstractFractalView {
     }
 
     public void setMaxColorIterations(double maxColorIterations) {
-        this.maxColorIterations = maxColorIterations;
+        if (maxColorIterations != this.maxColorIterations) {
+            this.maxColorIterations = maxColorIterations;
+            recreateColorBitmap();
+        }
     }
 
     public double getColorDistribution() {
